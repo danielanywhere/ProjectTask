@@ -14,7 +14,9 @@ Current Status: In-Testing for version 25.2800.0000.
 
 ProjectTask is a powerful, stand-alone .NET Standard 2.0 class library
 built to support flexible, event-driven project management, across any
-methodology, whether it's WBS, Agile, Scrum, Kanban, or good
+methodology, whether it's MSF (Microsoft Solutions Framework, the origin
+of modern planning for all Extreme Programming / Extreme Productivity
+activities, including Agile), Agile, Scrum, Kanban, or good
 old-fashioned Waterfall.
 
 With full support for JSON serialization, dependency handling, and
