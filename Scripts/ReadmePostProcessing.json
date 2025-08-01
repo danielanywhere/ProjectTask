@@ -31,8 +31,8 @@
 	},
 	{
 		"Remarks": "Set the marked content to italic.",
-		"FindPattern": "(?s:(?i:( |\\t)*\\{italic\\}(?<lineContent>.*?)( |\\t)*\\{/italic\\}))",
-		"ReplacePattern": "*${lineContent}*",
+		"FindPattern": "(?s:(?i:(?<prespace>( |\\t)*)\\{italic\\}(?<lineContent>.*?)( |\\t)*\\{/italic\\}))",
+		"ReplacePattern": "${prespace}*${lineContent}*",
 		"UseRegEx": 1
 	},
 	{
