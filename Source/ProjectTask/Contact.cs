@@ -234,6 +234,34 @@ namespace ProjectTask
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
+		//* mSchedule_ItemAdded																										*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// An item has been added to the Schedule collection.
+		/// </summary>
+		/// <param name="sender">
+		/// The object raising this event.
+		/// </param>
+		/// <param name="e">
+		/// Item event arguments.
+		/// </param>
+		private void mSchedule_ItemAdded(object sender,
+			ItemEventArgs<TimeBlockItem> e)
+		{
+			TimeBlockItem block = null;
+
+			if(e.Data != null && Parent?.ProjectFile != null)
+			{
+				block = Parent.ProjectFile.TimeBlocks.FirstOrDefault(x => x == e.Data);
+				if(block == null)
+				{
+					Parent.ProjectFile.TimeBlocks.Add(block);
+				}
+			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
 		//* mSupervisorContact_PropertyChanged																		*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
@@ -271,6 +299,7 @@ namespace ProjectTask
 		{
 			mSchedule = new TimeBlockCollection();
 			mSchedule.CollectionChanged += mSchedule_CollectionChanged;
+			mSchedule.ItemAdded += mSchedule_ItemAdded;
 			mSchedule.ItemPropertyChanged += mSchedule_ItemPropertyChanged;
 		}
 		//*-----------------------------------------------------------------------*

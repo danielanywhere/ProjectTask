@@ -249,6 +249,24 @@ namespace ProjectTask
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
+		//*	Parent																																*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Private member for <see cref="Parent">Parent</see>.
+		/// </summary>
+		private IParentCollection mParent = null;
+		/// <summary>
+		/// Get/Set a reference to the collection of which this item is a member.
+		/// </summary>
+		[JsonIgnore]
+		public IParentCollection Parent
+		{
+			get { return mParent; }
+			set { mParent = value; }
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
 		//*	PostDate																															*
 		//*-----------------------------------------------------------------------*
 		/// <summary>

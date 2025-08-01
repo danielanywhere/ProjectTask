@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
-
+using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -43,6 +43,7 @@ namespace ProjectTask
 		//*************************************************************************
 		//*	Protected																															*
 		//*************************************************************************
+
 		//*************************************************************************
 		//*	Public																																*
 		//*************************************************************************
@@ -230,6 +231,7 @@ namespace ProjectTask
 							if(taskChild != null)
 							{
 								taskParent.Tasks.Add(taskChild);
+								result++;
 							}
 						}
 					}
@@ -336,6 +338,35 @@ namespace ProjectTask
 			if(!e.Handled)
 			{
 				OnPropertyChanged("Dependencies");
+			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* mDependencies_ItemAdded																								*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// An item has been added to the dependencies collection.
+		/// </summary>
+		/// <param name="sender">
+		/// The object raising this event.
+		/// </param>
+		/// <param name="e">
+		/// Item event arguments.
+		/// </param>
+		private void mDependencies_ItemAdded(object sender,
+			ItemEventArgs<DependencyItem> e)
+		{
+			DependencyItem dependency = null;
+
+			if(e.Data != null && Parent?.ProjectFile != null)
+			{
+				dependency =
+					Parent.ProjectFile.Dependencies.FirstOrDefault(x => x == e.Data);
+				if(dependency == null)
+				{
+					Parent.ProjectFile.Dependencies.Add(e.Data);
+				}
 			}
 		}
 		//*-----------------------------------------------------------------------*
@@ -495,6 +526,33 @@ namespace ProjectTask
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
+		//* mTasks_ItemAdded																											*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// An item has been added to the Tasks collection.
+		/// </summary>
+		/// <param name="sender">
+		/// The object raising this event.
+		/// </param>
+		/// <param name="e">
+		/// Item event arguments.
+		/// </param>
+		private void mTasks_ItemAdded(object sender, ItemEventArgs<TaskItem> e)
+		{
+			TaskItem task = null;
+
+			if(e.Data != null && Parent?.ProjectFile != null)
+			{
+				task = Parent.ProjectFile.Tasks.FirstOrDefault(x => x == e.Data);
+				if(task == null)
+				{
+					Parent.ProjectFile.Tasks.Add(task);
+				}
+			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
 		//* mTasks_ItemPropertyChanged																						*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
@@ -534,6 +592,34 @@ namespace ProjectTask
 			if(!e.Handled)
 			{
 				OnPropertyChanged("TeamContacts");
+			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* mTeamContacts_ItemAdded																								*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// An item has been added to the Contacts collection.
+		/// </summary>
+		/// <param name="sender">
+		/// The object raising this event.
+		/// </param>
+		/// <param name="e">
+		/// Item event arguments.
+		/// </param>
+		private void mTeamContacts_ItemAdded(object sender,
+			ItemEventArgs<ContactItem> e)
+		{
+			ContactItem contact = null;
+
+			if(e.Data != null && Parent?.ProjectFile != null)
+			{
+				contact = Parent.ProjectFile.Contacts.FirstOrDefault(x => x == e.Data);
+				if(contact == null)
+				{
+					Parent.ProjectFile.Contacts.Add(contact);
+				}
 			}
 		}
 		//*-----------------------------------------------------------------------*
@@ -583,6 +669,33 @@ namespace ProjectTask
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
+		//* mTimers_ItemAdded																											*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// An item has been added to the Timers collection.
+		/// </summary>
+		/// <param name="sender">
+		/// The object raising this event.
+		/// </param>
+		/// <param name="e">
+		/// Item event arguments.
+		/// </param>
+		private void mTimers_ItemAdded(object sender, ItemEventArgs<TimerItem> e)
+		{
+			TimerItem timer = null;
+
+			if(e.Data != null && Parent?.ProjectFile != null)
+			{
+				timer = Parent.ProjectFile.Timers.FirstOrDefault(x => x == e.Data);
+				if(timer == null)
+				{
+					Parent.ProjectFile.Timers.Add(timer);
+				}
+			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
 		//* mTimers_ItemPropertyChanged																						*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
@@ -620,17 +733,21 @@ namespace ProjectTask
 		{
 			mDependencies = new DependencyCollection();
 			mDependencies.CollectionChanged += mDependencies_CollectionChanged;
+			mDependencies.ItemAdded += mDependencies_ItemAdded;
 			mDependencies.ItemPropertyChanged += mDependencies_ItemPropertyChanged;
 			mDescription = new MultilineString();
 			mDescription.CollectionChanged += mDescription_CollectionChanged;
 			mTasks = new TaskCollection();
 			mTasks.CollectionChanged += mTasks_CollectionChanged;
+			mTasks.ItemAdded += mTasks_ItemAdded;
 			mTasks.ItemPropertyChanged += mTasks_ItemPropertyChanged;
 			mTeamContacts = new ContactCollection();
 			mTeamContacts.CollectionChanged += mTeamContacts_CollectionChanged;
+			mTeamContacts.ItemAdded += mTeamContacts_ItemAdded;
 			mTeamContacts.ItemPropertyChanged += mTeamContacts_ItemPropertyChanged;
 			mTimers = new TimerCollection();
 			mTimers.CollectionChanged += mTimers_CollectionChanged;
+			mTimers.ItemAdded += mTimers_ItemAdded;
 			mTimers.ItemPropertyChanged += mTimers_ItemPropertyChanged;
 		}
 		//*-----------------------------------------------------------------------*
@@ -1684,6 +1801,31 @@ namespace ProjectTask
 		}
 		//*-----------------------------------------------------------------------*
 
+		//*-----------------------------------------------------------------------*
+		//* ToString																															*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Return the string representation of this item.
+		/// </summary>
+		/// <returns>
+		/// The string representation of this task or project.
+		/// </returns>
+		public override string ToString()
+		{
+			StringBuilder builder = new StringBuilder();
+
+			if(mItemType != null)
+			{
+				builder.Append($"{mItemType.TaskType}:");
+			}
+			else
+			{
+				builder.Append("(none):");
+			}
+			builder.Append(mDisplayName);
+			return builder.ToString();
+		}
+		//*-----------------------------------------------------------------------*
 
 	}
 	//*-------------------------------------------------------------------------*

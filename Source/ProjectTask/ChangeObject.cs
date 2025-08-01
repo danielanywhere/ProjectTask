@@ -36,7 +36,7 @@ namespace ProjectTask
 	/// <typeparam name="T">
 	/// Any type for which change handling will be configured.
 	/// </typeparam>
-	public class ChangeObjectCollection<T> : List<T>
+	public class ChangeObjectCollection<T> : List<T>, IParentCollection
 	{
 		//*************************************************************************
 		//*	Private																																*
@@ -102,6 +102,22 @@ namespace ProjectTask
 		}
 		//*-----------------------------------------------------------------------*
 
+		//*-----------------------------------------------------------------------*
+		//* OnRemove																															*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Raises the Remove event when an item has been removed from the
+		/// collection.
+		/// </summary>
+		/// <param name="item">
+		/// Reference to the item that has been removed.
+		/// </param>
+		protected virtual void OnRemove(T item)
+		{
+			ItemRemoved?.Invoke(this, new ItemEventArgs<T>(item));
+		}
+		//*-----------------------------------------------------------------------*
+
 		//*************************************************************************
 		//*	Public																																*
 		//*************************************************************************
@@ -118,6 +134,17 @@ namespace ProjectTask
 		{
 			if(item != null)
 			{
+				if(item is IItem @itemInterface && itemInterface.ItemId == 0)
+				{
+					if(mProjectFile != null)
+					{
+						itemInterface.ItemId = mNextItemId++;
+					}
+					if(itemInterface.Parent == null || mProjectFile != null)
+					{
+						itemInterface.Parent = this;
+					}
+				}
 				if(item is ChangeObjectItem @objectItem)
 				{
 					objectItem.PropertyChanged += OnItemPropertyChanged;
@@ -144,6 +171,14 @@ namespace ProjectTask
 			{
 				foreach(T tItem in collection)
 				{
+					if(tItem is IItem @itemInterface)
+					{
+						itemInterface.ItemId = mNextItemId++;
+						if(itemInterface.Parent == null)
+						{
+							itemInterface.Parent = this;
+						}
+					}
 					if(tItem is ChangeObjectItem @objectItem)
 					{
 						objectItem.PropertyChanged += OnItemPropertyChanged;
@@ -194,6 +229,10 @@ namespace ProjectTask
 		{
 			if(index > -1 && item != null)
 			{
+				if(item is IItem @itemInterface)
+				{
+					itemInterface.ItemId = mNextItemId++;
+				}
 				if(item is ChangeObjectItem @objectItem)
 				{
 					objectItem.PropertyChanged += OnItemPropertyChanged;
@@ -225,6 +264,10 @@ namespace ProjectTask
 			{
 				foreach(T tItem in collection)
 				{
+					if(tItem is IItem @itemInterface)
+					{
+						itemInterface.ItemId = mNextItemId++;
+					}
 					if(tItem is ChangeObjectItem @objectItem)
 					{
 						objectItem.PropertyChanged += OnItemPropertyChanged;
@@ -253,6 +296,50 @@ namespace ProjectTask
 		/// Raised when the value of a property on an individual item has changed.
 		/// </summary>
 		public event EventHandler<PropertyChangeEventArgs> ItemPropertyChanged;
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* ItemRemoved																														*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Raised when an item is removed from the collection.
+		/// </summary>
+		public event EventHandler<ItemEventArgs<T>> ItemRemoved;
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//*	NextItemId																														*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Private member for <see cref="NextItemId">NextItemId</see>.
+		/// </summary>
+		private int mNextItemId = 1;
+		///// <summary>
+		///// Get/Set the next local item ID.
+		///// </summary>
+		//[JsonIgnore]
+		//public int NextItemId
+		//{
+		//	get { return mNextItemId; }
+		//	set { mNextItemId = value; }
+		//}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//*	Parent																																*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Private member for <see cref="Parent">Parent</see>.
+		/// </summary>
+		private IParentCollection mParent = null;
+		/// <summary>
+		/// Get/Set a reference to the parent collection.
+		/// </summary>
+		public IParentCollection Parent
+		{
+			get { return mParent; }
+			set { mParent = value; }
+		}
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
@@ -315,6 +402,7 @@ namespace ProjectTask
 			}
 			if(result)
 			{
+				OnRemove(item);
 				OnCollectionChanged("Remove");
 			}
 			return result;
@@ -360,6 +448,7 @@ namespace ProjectTask
 						//	Deindex.
 						index--;
 						result++;
+						OnRemove(item);
 						OnCollectionChanged("Remove");
 					}
 				}
@@ -390,6 +479,7 @@ namespace ProjectTask
 					objectItem.PropertyChanged -= OnItemPropertyChanged;
 				}
 				base.RemoveAt(index);
+				OnRemove(item);
 				OnCollectionChanged("Remove");
 			}
 		}
@@ -424,6 +514,7 @@ namespace ProjectTask
 						objectItem.PropertyChanged -= OnItemPropertyChanged;
 					}
 					base.RemoveAt(index);
+					OnRemove(item);
 					OnCollectionChanged("Remove");
 					remaining--;
 				}

@@ -177,13 +177,17 @@ namespace ProjectTask
 		{
 			bool bContinue = true;
 			int count = 0;
+			List<DependencyItem> dependentEntries = null;
 			List<TaskItem> dependentTasks = new List<TaskItem>();
 			int index = 0;
-			TaskItem remote = null;
+			//TaskItem remote = null;
 			int remoteIndex = 0;
 			TimeSpan span = TimeSpan.Zero;
 			TaskItem task = null;
 
+			//	TODO: !1 - Stopped here...
+			//	TODO: Currently rearranging the Local <-> Remote dependency placements.
+			//	When defining this kind of record, we say This item can start on completion of 'Remote Project'.
 			if(mProjectFile != null && tasks?.Count > 0)
 			{
 				count = tasks.Count;
@@ -191,52 +195,60 @@ namespace ProjectTask
 				{
 					bContinue = true;
 					task = tasks[index];
-					foreach(DependencyItem dependencyItem in task.Dependencies)
+					dependentEntries =
+						mProjectFile.Dependencies.FindAll(x =>
+							x.RemoteDependency.ItemId == task.ItemId);
+					dependentTasks = mProjectFile.Tasks.FindAll(x =>
+						dependentEntries.Exists(y =>
+							x.Dependencies.Exists(z => z.ItemId == y.ItemId)));
+					foreach(TaskItem taskItem in dependentTasks)
 					{
-						switch(dependencyItem.DependencyType)
+						dependentEntries = taskItem.Dependencies.FindAll(x =>
+							x.RemoteDependency.ItemId == task.ItemId);
+						foreach(DependencyItem dependencyItem in dependentEntries)
 						{
-							case DependencyTypeEnum.StartAfter:
-							case DependencyTypeEnum.StartOnCompletion:
-								//	This task can start after the remote task begins or
-								//	after it ends.
-								remoteIndex = -1;
-								remote = dependencyItem.RemoteDependency;
-								if(remote != null)
-								{
-									if(tasks.Exists(x => x.ItemTicket == remote.ItemTicket))
+							switch(dependencyItem.DependencyType)
+							{
+								case DependencyTypeEnum.StartAfter:
+								case DependencyTypeEnum.StartOnCompletion:
+									//	That task can start after this task begins or
+									//	after it ends.
+									remoteIndex = -1;
+									//remote = taskItem;
+									if(tasks.Exists(x => x.ItemTicket == taskItem.ItemTicket))
 									{
-										remoteIndex = tasks.IndexOf(remote);
+										remoteIndex = tasks.IndexOf(taskItem);
 									}
 									else
 									{
-										tasks.Insert(index, remote);
+										tasks.Insert(index, taskItem);
 										index--;  //	Deindex. Re-measure.
-										index -= InsertChildTasks(index, remote, tasks);
+										index -= InsertChildTasks(index, taskItem, tasks);
 										bContinue = false;
 									}
-								}
-								if(remoteIndex > index)
-								{
-									//	The dependent item occurs after this item. Move it up.
-									tasks.RemoveAt(remoteIndex);
-									tasks.Insert(index, remote);
-									index--;	//	Deindex. Re-measure.
-									MoveChildTasksToIndex(index, remote, tasks);
-									bContinue = false;
-								}
+									if(remoteIndex > index)
+									{
+										//	The dependent item occurs after this item. Move it up.
+										tasks.RemoveAt(remoteIndex);
+										tasks.Insert(index, taskItem);
+										index--;  //	Deindex. Re-measure.
+										MoveChildTasksToIndex(index, taskItem, tasks);
+										bContinue = false;
+									}
+									break;
+								case DependencyTypeEnum.TriggerRisingEdge:
+									//	Trigger the remote task into action when this task
+									//	is started. Used for industrial automation (rising edge).
+									break;
+								case DependencyTypeEnum.TriggerFallingEdge:
+									//	Trigger the remote task into action upon completion of
+									//	this task. Used for industrial automation (falling edge).
+									break;
+							}
+							if(!bContinue)
+							{
 								break;
-							case DependencyTypeEnum.TriggerRisingEdge:
-								//	Trigger the remote task into action when this task
-								//	is started. Used for industrial automation (rising edge).
-								break;
-							case DependencyTypeEnum.TriggerFallingEdge:
-								//	Trigger the remote task into action upon completion of
-								//	this task. Used for industrial automation (falling edge).
-								break;
-						}
-						if(!bContinue)
-						{
-							break;
+							}
 						}
 					}
 				}

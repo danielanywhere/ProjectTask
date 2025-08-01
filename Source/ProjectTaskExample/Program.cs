@@ -87,6 +87,7 @@ namespace ProjectTaskExample
 		public void Run()
 		{
 			int count = 0;
+			List<FreeBusyItem> freeBusyItems = null;
 			int index = 0;
 			ProjectFile projectFile = new ProjectFile();
 			ScheduleEngine scheduler = null;
@@ -187,6 +188,7 @@ namespace ProjectTaskExample
 
 			//	Tasks can also be bulk-assigned programmatically, using the
 			//	AssociateTasksByName function.
+			Console.WriteLine("Associate 3 tasks to Echoes of Tomorrow...");
 			count = projectFile.Tasks.AssociateTasksByName("Echoes of Tomorrow",
 				"Microbial Fuel Cell Optimization",
 				"Biodegradable Polymer Casing Development",
@@ -243,26 +245,15 @@ namespace ProjectTaskExample
 
 			scheduler = new ScheduleEngine(projectFile);
 			//	Estimate the first project first.
-			scheduler.CalculateTask(projectFile.Tasks["MaidenProject"]);
+			freeBusyItems =
+				scheduler.CalculateTask(projectFile.Tasks["MaidenProject"]);
+			Console.WriteLine("Schedule Entries:");
+			foreach(FreeBusyItem freeBusyItem in freeBusyItems)
+			{
+				Console.WriteLine($" {freeBusyItem}");
+			}
 		}
 		//*-----------------------------------------------------------------------*
-
-		//*-----------------------------------------------------------------------*
-		//*	WaitAfterEnd																													*
-		//*-----------------------------------------------------------------------*
-		/// <summary>
-		/// Private member for <see cref="WaitAfterEnd">WaitAfterEnd</see>.
-		/// </summary>
-		private bool mWaitAfterEnd = false;
-		/// <summary>
-		/// Get/Set a value indicating whether to wait for user keypress after
-		/// processing has completed.
-		/// </summary>
-		public bool WaitAfterEnd
-		{
-			get { return mWaitAfterEnd; }
-			set { mWaitAfterEnd = value; }
-		}
 
 	}
 	//*-------------------------------------------------------------------------*

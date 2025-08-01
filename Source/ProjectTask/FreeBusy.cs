@@ -332,6 +332,24 @@ namespace ProjectTask
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
+		//*	Parent																																*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Private member for <see cref="Parent">Parent</see>.
+		/// </summary>
+		private IParentCollection mParent = null;
+		/// <summary>
+		/// Get/Set a reference to the collection of which this item is a member.
+		/// </summary>
+		[JsonIgnore]
+		public IParentCollection Parent
+		{
+			get { return mParent; }
+			set { mParent = value; }
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
 		//*	ShouldSerializeBusy																										*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
@@ -492,6 +510,48 @@ namespace ProjectTask
 					OnPropertyChanged();
 				}
 			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* ToString																															*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Return the string representation of this item.
+		/// </summary>
+		/// <returns>
+		/// The user-readable string representation of this item.
+		/// </returns>
+		public override string ToString()
+		{
+			StringBuilder builder = new StringBuilder();
+
+			builder.Append("Free/Busy:");
+			builder.Append(mBusy ? "Busy" : "Free");
+			builder.Append(";Time:");
+			builder.Append(mDateRange.StartDate.ToString("yyyy-MM-dd.HH:mm"));
+			builder.Append("to");
+			builder.Append(mDateRange.EndDate.ToString("yyyy-MM-dd.HH:mm"));
+			builder.Append(";Task:");
+			if(mTask != null)
+			{
+				builder.Append(mTask.DisplayName);
+			}
+			else
+			{
+				builder.Append("(none)");
+			}
+			builder.Append(";Contact:");
+			if(mContact != null)
+			{
+				builder.Append(mContact.DisplayName);
+			}
+			else
+			{
+				builder.Append("(none)");
+			}
+			builder.Append($";Id:{mItemId}");
+			return builder.ToString();
 		}
 		//*-----------------------------------------------------------------------*
 

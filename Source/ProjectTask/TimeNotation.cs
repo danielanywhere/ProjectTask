@@ -2037,8 +2037,8 @@ namespace ProjectTask
 			string[] weeks;
 			StringBuilder builder = new StringBuilder();
 
-			builder.Append("Start:   " + mStartDate.ToString() + "\n");
-			builder.Append("End:     " + mEndDate.ToString() + "\n");
+			builder.Append("Start:   " + mStartDate.ToString() + ";\r\n");
+			builder.Append("End:     " + mEndDate.ToString() + ";\r\n");
 			builder.Append("Occur:   ");
 			switch(mRepetitionRate)
 			{
@@ -2159,12 +2159,12 @@ namespace ProjectTask
 					builder.Append("]");
 					break;
 			}
-			builder.Append("\n");
+			builder.Append(";\r\n");
 			//	Duration.
 			builder.Append("Duration:");
 			builder.Append(
 				new DateRangeItem(mStartDate, mEndDate).Duration.ToString());
-			builder.Append("\n");
+			builder.Append(";\r\n");
 			//	Period.
 			builder.Append("Period:  ");
 			builder.Append(ActivePeriod.ToString() + " ");

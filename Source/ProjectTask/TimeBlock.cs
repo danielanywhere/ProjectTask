@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 using Newtonsoft.Json;
@@ -134,6 +135,35 @@ namespace ProjectTask
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
+		//* mEntries_ItemAdded																										*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// An item has been added to the Entries property.
+		/// </summary>
+		/// <param name="sender">
+		/// The object raising this event.
+		/// </param>
+		/// <param name="e">
+		/// Item event arguments.
+		/// </param>
+		private void mEntries_ItemAdded(object sender,
+			ItemEventArgs<TimeNotationItem> e)
+		{
+			TimeNotationItem notation = null;
+
+			if(e.Data != null && Parent?.ProjectFile != null)
+			{
+				notation =
+					Parent.ProjectFile.TimeNotations.FirstOrDefault(x => x == e.Data);
+				if(notation == null)
+				{
+					Parent.ProjectFile.TimeNotations.Add(e.Data);
+				}
+			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
 		//* mEntries_ItemPropertyChanged																					*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
@@ -171,6 +201,7 @@ namespace ProjectTask
 		{
 			mEntries = new TimeNotationCollection();
 			mEntries.CollectionChanged += mEntries_CollectionChanged;
+			mEntries.ItemAdded += mEntries_ItemAdded;
 			mEntries.ItemPropertyChanged += mEntries_ItemPropertyChanged;
 		}
 		//*-----------------------------------------------------------------------*
