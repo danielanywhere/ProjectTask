@@ -36,6 +36,10 @@ namespace ProjectTask
 		//*************************************************************************
 		//*	Private																																*
 		//*************************************************************************
+		private List<ContactAllocationItem> mContactAllocations = null;
+		private List<FreeBusyItem> mRunningFreeBusy = null;
+		private List<TaskItem> mTasks = null;
+
 		//*-----------------------------------------------------------------------*
 		//* AddAllocation																													*
 		//*-----------------------------------------------------------------------*
@@ -185,9 +189,10 @@ namespace ProjectTask
 			TimeSpan span = TimeSpan.Zero;
 			TaskItem task = null;
 
-			//	TODO: !1 - Stopped here...
 			//	TODO: Currently rearranging the Local <-> Remote dependency placements.
-			//	When defining this kind of record, we say This item can start on completion of 'Remote Project'.
+			//	When defining this kind of record from the client perspective, we say:
+			//	"This item can start upon completion of 'Remote Project'".
+			//	Where 'This item' is the task currently in focus.
 			if(mProjectFile != null && tasks?.Count > 0)
 			{
 				count = tasks.Count;
@@ -198,6 +203,7 @@ namespace ProjectTask
 					dependentEntries =
 						mProjectFile.Dependencies.FindAll(x =>
 							x.RemoteDependency.ItemId == task.ItemId);
+					//	All tasks depdendent on the current task.
 					dependentTasks = mProjectFile.Tasks.FindAll(x =>
 						dependentEntries.Exists(y =>
 							x.Dependencies.Exists(z => z.ItemId == y.ItemId)));
@@ -211,24 +217,24 @@ namespace ProjectTask
 							{
 								case DependencyTypeEnum.StartAfter:
 								case DependencyTypeEnum.StartOnCompletion:
-									//	That task can start after this task begins or
+									//	The current task can start after this task begins or
 									//	after it ends.
 									remoteIndex = -1;
-									//remote = taskItem;
 									if(tasks.Exists(x => x.ItemTicket == taskItem.ItemTicket))
 									{
 										remoteIndex = tasks.IndexOf(taskItem);
 									}
 									else
 									{
+										//	Deindex. Re-measure.
+										index = GetLastTaskIndex(tasks, task) + 1;
 										tasks.Insert(index, taskItem);
-										index--;  //	Deindex. Re-measure.
 										index -= InsertChildTasks(index, taskItem, tasks);
 										bContinue = false;
 									}
-									if(remoteIndex > index)
+									if(remoteIndex < index)
 									{
-										//	The dependent item occurs after this item. Move it up.
+										//	The current item occurs after this item. Move it up.
 										tasks.RemoveAt(remoteIndex);
 										tasks.Insert(index, taskItem);
 										index--;  //	Deindex. Re-measure.
@@ -297,13 +303,47 @@ namespace ProjectTask
 			}
 			return result;
 		}
+		//*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*
+		/// <summary>
+		/// Return a value indicating whether all of the child tasks of the
+		/// specified item have been calculated.
+		/// </summary>
+		/// <param name="task">
+		/// Reference to the task to test.
+		/// </param>
+		/// <returns>
+		/// True if all of the descendants of the specified task have been
+		/// calculated.
+		/// </returns>
+		private static bool AllChildTasksCalculated(TaskItem task)
+		{
+			bool result = true;
+
+			if(task != null)
+			{
+				foreach(TaskItem taskItem in task.Tasks)
+				{
+					if(taskItem.CalculatedTimeElapsed < taskItem.CalculatedTimeEstimated)
+					{
+						result = false;
+						break;
+					}
+					result = AllChildTasksCalculated(taskItem);
+					if(!result)
+					{
+						break;
+					}
+				}
+			}
+			return result;
+		}
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
-		//* AllDependentTasksCalculated																						*
+		//* AllDependencyTasksCalculated																					*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
-		/// Return a value indicating whether all dependent tasks of the specified
+		/// Return a value indicating whether all dependency tasks of the specified
 		/// task have been calculated.
 		/// </summary>
 		/// <param name="tasks">
@@ -316,22 +356,21 @@ namespace ProjectTask
 		/// True if all dependent tasks of the main task have been calculated.
 		/// Otherwise, false.
 		/// </returns>
-		private static bool AllDependentTasksCalculated(List<TaskItem> tasks,
+		private bool AllDependencyTasksCalculated(List<TaskItem> tasks,
 			TaskItem task)
 		{
-			TaskItem dependentTask = null;
+			List<TaskItem> dependencyTasks = null;
 			bool result = false;
 
 			if(tasks?.Count > 0 && task != null)
 			{
 				result = true;
-				foreach(DependencyItem dependencyItem in task.Dependencies)
+				dependencyTasks = GetAllDependencyTasks(task);
+				foreach(TaskItem dependencyTaskItem in dependencyTasks)
 				{
-					dependentTask = tasks.FirstOrDefault(x =>
-						x.ItemId == dependencyItem.RemoteDependency.ItemId);
-					if(dependentTask == null ||
-						dependentTask.CalculatedTimeElapsed <
-						dependentTask.CalculatedTimeEstimated)
+					if(dependencyTaskItem.CalculatedTimeElapsed <
+						dependencyTaskItem.CalculatedTimeEstimated ||
+						!AllChildTasksCalculated(dependencyTaskItem))
 					{
 						result = false;
 						break;
@@ -439,6 +478,189 @@ namespace ProjectTask
 		}
 		//*-----------------------------------------------------------------------*
 
+		//*-----------------------------------------------------------------------*
+		//* AssignTask																														*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Assign the work to be done on an individual task to a specific contact.
+		/// </summary>
+		/// <param name="allocation">
+		/// Reference to the contact allocation to which the work will be assigned.
+		/// </param>
+		/// <param name="task">
+		/// Reference to the task to be completed by the specified party.
+		/// </param>
+		/// <returns>
+		/// Reference to a collection of Free/Busy connectors created to
+		/// associate with the contacts and tasks.
+		/// </returns>
+		private List<FreeBusyItem> AssignTask(
+			ContactAllocationItem allocation,
+			TaskItem task)
+		{
+			FreeBusyItem availableTime = null;
+			List<FreeBusyItem> availableTimes = new List<FreeBusyItem>();
+			bool bContinue = true;
+			int count = 0;
+			DateTime endDate = DateTime.MinValue;
+			FreeBusyItem freeBusy = null;
+			float hoursAvailable = 0f;
+			float hoursOutstanding = 0f;
+			int index = 0;
+			List<FreeBusyItem> result = new List<FreeBusyItem>();
+
+			if(allocation != null && task != null &&
+				task.CalculatedTimeEstimated - task.CalculatedTimeElapsed > 0f)
+			{
+				//	Still work to do on this task.
+				hoursOutstanding =
+					task.CalculatedTimeEstimated -
+					task.CalculatedTimeElapsed;
+				if(hoursOutstanding < 0f)
+				{
+					hoursOutstanding = 0f;
+				}
+				availableTime = GetFirstAvailableTime(allocation, task);
+				if(availableTime != null)
+				{
+					//	Apply the contact's available time to this task.
+					index = allocation.FreeBusyConnections.IndexOf(availableTime);
+					if(index > -1)
+					{
+						count = allocation.FreeBusyConnections.Count;
+						availableTimes.Clear();
+						for(; index < count; index++)
+						{
+							availableTimes.Add(allocation.FreeBusyConnections[index]);
+						}
+					}
+				}
+				if(availableTimes.Count > 0)
+				{
+					foreach(FreeBusyItem busyItem in availableTimes)
+					{
+						freeBusy = new FreeBusyItem()
+						{
+							Busy = true,
+							Contact = allocation.Contact,
+							Task = task,
+							TimeNotation = busyItem.TimeNotation
+						};
+						hoursAvailable =
+							DateRangeItem.TotalHours(busyItem.DateRange);
+						if(hoursAvailable >= hoursOutstanding)
+						{
+							//	Clear out the task calculation.
+							endDate = busyItem.DateRange.EndDate;
+							freeBusy.DateRange.StartDate =
+								busyItem.DateRange.StartDate;
+							freeBusy.DateRange.Duration =
+								ToTimeSpan(hoursOutstanding);
+							busyItem.DateRange.StartDate =
+								freeBusy.DateRange.EndDate;
+							busyItem.DateRange.EndDate = endDate;
+							task.CalculatedTimeElapsed =
+								task.CalculatedTimeEstimated;
+							hoursOutstanding = 0f;
+							bContinue = false;
+						}
+						else
+						{
+							//	Apply all of the available hours for this entry.
+							freeBusy.DateRange.StartDate =
+								busyItem.DateRange.StartDate;
+							freeBusy.DateRange.EndDate =
+								busyItem.DateRange.EndDate;
+							task.CalculatedTimeElapsed += hoursAvailable;
+							hoursOutstanding -= hoursAvailable;
+						}
+						result.Add(freeBusy);
+						if(!bContinue)
+						{
+							break;
+						}
+					}
+				}
+			}
+			return result;
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* AssignTasks																														*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Match and assign the estimated tasks to the available contact time.
+		/// </summary>
+		/// <param name="contactAllocations">
+		/// Reference to the collection of contact time allocations,
+		/// associated tasks, and free/busy connectors.
+		/// </param>
+		/// <param name="tasks">
+		/// Reference to the collection of all tasks currently in review.
+		/// </param>
+		/// <returns>
+		/// Reference to a collection of Free/Busy connectors created to
+		/// associate with the contacts and tasks.
+		/// </returns>
+		private List<FreeBusyItem> AssignTasks(
+			List<ContactAllocationItem> contactAllocations, List<TaskItem> tasks)
+		{
+			bool bContinue = true;
+			bool bNextPlayer = false;
+			List<FreeBusyItem> freeBusyCurrentPass = new List<FreeBusyItem>();
+			List<FreeBusyItem> freeBusyItems = new List<FreeBusyItem>();
+			int passCount = 10;
+			int passIndex = 0;
+
+			if(contactAllocations?.Count > 0)
+			{
+				for(passIndex = 0; bContinue && passIndex < passCount; passIndex++)
+				{
+					foreach(ContactAllocationItem allocationItem in contactAllocations)
+					{
+						foreach(TaskItem taskItem in allocationItem.Tasks)
+						{
+							if(taskItem.CalculatedTimeEstimated -
+								taskItem.CalculatedTimeElapsed > 0f &&
+								AllChildTasksCalculated(tasks, taskItem) &&
+								AllDependencyTasksCalculated(tasks, taskItem))
+							{
+								freeBusyCurrentPass.Clear();
+								freeBusyCurrentPass.AddRange(
+									AssignTask(allocationItem, taskItem));
+								if(freeBusyCurrentPass.Count > 0)
+								{
+									freeBusyItems.AddRange(freeBusyCurrentPass);
+									mRunningFreeBusy.AddRange(freeBusyCurrentPass);
+									bNextPlayer = true;
+								}
+							}
+							if(bNextPlayer)
+							{
+								break;
+							}
+						}
+						bNextPlayer = false;
+						if(AllTasksCalculated(tasks))
+						{
+							bContinue = false;
+							break;
+						}
+					}
+				}
+				foreach(TaskItem taskItem in tasks)
+				{
+					taskItem.CalculatedStartDate =
+						GetEarliestStartDate(freeBusyItems, taskItem);
+					taskItem.CalculatedEndDate =
+						GetLatestEndDate(freeBusyItems, taskItem);
+				}
+			}
+			return freeBusyItems;
+		}
+		//*-----------------------------------------------------------------------*
+
 		////*-----------------------------------------------------------------------*
 		////* ClearAllocations																											*
 		////*-----------------------------------------------------------------------*
@@ -472,6 +694,72 @@ namespace ProjectTask
 		////*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
+		//* FillAllChildTasks																											*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Fill the supplied target list with references from all of descendants
+		/// of the specified task.
+		/// </summary>
+		/// <param name="task">
+		/// Reference to the task whose descendants will be added to the list.
+		/// </param>
+		/// <param name="childTasks">
+		/// Reference to the target child tasks list.
+		/// </param>
+		private void FillAllChildTasks(TaskItem task, List<TaskItem> childTasks)
+		{
+			if(task != null && childTasks != null)
+			{
+				foreach(TaskItem taskItem in task.Tasks)
+				{
+					childTasks.Add(taskItem);
+					FillAllChildTasks(taskItem, childTasks);
+				}
+			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* FillAllDependencyTasks																								*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Fill the target dependency task list with dependencies found on the
+		/// provided source task.
+		/// </summary>
+		/// <param name="task">
+		/// Reference to the source task to test.
+		/// </param>
+		/// <param name="dependencyTasks">
+		/// Reference to the collection of dependency tasks to fill.
+		/// </param>
+		private void FillAllDependencyTasks(TaskItem task,
+			List<TaskItem> dependencyTasks)
+		{
+			TaskItem dependencyTask = null;
+			if(task != null && dependencyTasks != null)
+			{
+				foreach(DependencyItem dependencyItem in task.Dependencies)
+				{
+					dependencyTask = mProjectFile.Tasks.FirstOrDefault(x =>
+						x.ItemId == dependencyItem.RemoteDependency.ItemId);
+					if(dependencyTask != null)
+					{
+						if(!dependencyTasks.Contains(dependencyTask))
+						{
+							dependencyTasks.Add(dependencyTask);
+						}
+					}
+					FillAllDependencyTasks(dependencyTask, dependencyTasks);
+				}
+				if(task.ParentTask != null)
+				{
+					FillAllDependencyTasks(task.ParentTask, dependencyTasks);
+				}
+			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
 		//* FinalizeCalculations																									*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
@@ -489,6 +777,83 @@ namespace ProjectTask
 					taskItem.ExtendedProperties.SetValue("Calculated", "1");
 				}
 			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* GetAllChildTasks																											*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Return a reference to the collection of all descendant tasks for the
+		/// tasks in the provided list.
+		/// </summary>
+		/// <param name="tasks">
+		/// Reference to a list of tasks for which all descendants will be
+		/// returned.
+		/// </param>
+		/// <returns>
+		/// Reference to a collection of all descendants of the caller's specified
+		/// task list.
+		/// </returns>
+		private List<TaskItem> GetAllChildTasks(List<TaskItem> tasks)
+		{
+			List<TaskItem> result = new List<TaskItem>();
+
+			if(tasks?.Count > 0)
+			{
+				foreach(TaskItem taskItem in tasks)
+				{
+					FillAllChildTasks(taskItem, result);
+				}
+			}
+			return result;
+		}
+		//*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*
+		/// <summary>
+		/// Return a reference to the collection of all descendant tasks for the
+		/// specified task under review.
+		/// </summary>
+		/// <param name="task">
+		/// Reference to the task to drill down in.
+		/// </param>
+		/// <returns>
+		/// Reference to a collection of all descendants of the caller's specified
+		/// task.
+		/// </returns>
+		private List<TaskItem> GetAllChildTasks(TaskItem task)
+		{
+			List<TaskItem> result = new List<TaskItem>();
+
+			if(task != null)
+			{
+				FillAllChildTasks(task, result);
+			}
+			return result;
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* GetAllDependencyTasks																									*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Return all of the depdencencies of the specified task.
+		/// </summary>
+		/// <param name="task">
+		/// Reference to the task whose dependencies will be enumerated.
+		/// </param>
+		/// <returns>
+		/// Reference to a collection of dependency tasks for the specified
+		/// task, if found. Otherwise, an empty collection.
+		/// </returns>
+		private List<TaskItem> GetAllDependencyTasks(TaskItem task)
+		{
+			List<TaskItem> result = new List<TaskItem>();
+
+			if(task != null)
+			{
+				FillAllDependencyTasks(task, result);
+			}
+			return result;
 		}
 		//*-----------------------------------------------------------------------*
 
@@ -531,6 +896,160 @@ namespace ProjectTask
 				result = DateTime.MinValue;
 			}
 			return result;
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* GetFirstAvailableTime																									*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Return the contact's first available time that matches with the
+		/// specified task's date requirements.
+		/// </summary>
+		/// <param name="allocation">
+		/// Reference to the contact allocation to check for free time.
+		/// </param>
+		/// <param name="task">
+		/// Reference to the task to check for date requirements.
+		/// </param>
+		/// <returns>
+		/// Reference to the contact's first available free time to work on the
+		/// specified task, if found. Otherwise, null.
+		/// </returns>
+		private FreeBusyItem GetFirstAvailableTime(
+			ContactAllocationItem allocation, TaskItem task)
+		{
+			List<TaskItem> dependancyTasks = null;
+			DateTime earliestDate = DateTime.MaxValue;
+			List<FreeBusyItem> freeBusies = new List<FreeBusyItem>();
+			FreeBusyItem result = null;
+
+			if(allocation != null && task != null)
+			{
+				if(DateTime.Compare(task.StartDate,
+					DateTime.MinValue) == 0 ||
+					DateTime.Compare(task.StartDate, DateTime.Today) <= 0)
+				{
+					earliestDate = DateTime.Now + new TimeSpan(1, 0, 0);
+				}
+				else
+				{
+					earliestDate = task.StartDate;
+				}
+				//	Assure this work doesn't start until after any child or
+				//	dependent tasks have been completed.
+				dependancyTasks = GetAllChildTasks(task);
+				foreach(TaskItem taskItem in dependancyTasks)
+				{
+					if(DateTime.Compare(taskItem.TargetDate, earliestDate) > 0)
+					{
+						earliestDate = taskItem.TargetDate;
+					}
+					freeBusies.Clear();
+					freeBusies.AddRange(
+						mRunningFreeBusy.FindAll(x =>
+							x.Busy == true &&
+							x.Task != null && x.Task.ItemId == task.ItemId));
+					foreach(FreeBusyItem busyItem in freeBusies)
+					{
+						if(DateTime.Compare(busyItem.DateRange.EndDate,
+							earliestDate) > 0)
+						{
+							earliestDate = busyItem.DateRange.EndDate;
+						}
+					}
+					freeBusies.Clear();
+					freeBusies.AddRange(mProjectFile.FreeBusyConnectors.FindAll(x =>
+						x.Task != null && x.Task.ItemId == taskItem.ItemId));
+					foreach(FreeBusyItem busyItem in freeBusies)
+					{
+						if(DateTime.Compare(busyItem.DateRange.EndDate,
+							earliestDate) > 0)
+						{
+							earliestDate = busyItem.DateRange.EndDate;
+						}
+					}
+				}
+				dependancyTasks = GetAllDependencyTasks(task);
+				dependancyTasks.AddRange(GetAllChildTasks(dependancyTasks));
+				foreach(TaskItem taskItem in dependancyTasks)
+				{
+					if(DateTime.Compare(taskItem.TargetDate, earliestDate) > 0)
+					{
+						earliestDate = taskItem.TargetDate;
+					}
+					freeBusies.Clear();
+					freeBusies.AddRange(
+						mRunningFreeBusy.FindAll(x =>
+							x.Busy == true &&
+							x.Task != null && x.Task.ItemId == taskItem.ItemId));
+					foreach(FreeBusyItem busyItem in freeBusies)
+					{
+						if(DateTime.Compare(busyItem.DateRange.EndDate,
+							earliestDate) > 0)
+						{
+							earliestDate = busyItem.DateRange.EndDate;
+						}
+					}
+					freeBusies.Clear();
+					freeBusies.AddRange(mProjectFile.FreeBusyConnectors.FindAll(x =>
+						x.Task != null && x.Task.ItemId == taskItem.ItemId));
+					foreach(FreeBusyItem busyItem in freeBusies)
+					{
+						if(DateTime.Compare(busyItem.DateRange.EndDate,
+							earliestDate) > 0)
+						{
+							earliestDate = busyItem.DateRange.EndDate;
+						}
+					}
+				}
+				if(DateTime.Compare(earliestDate, DateTime.MaxValue) < 0)
+				{
+					result = allocation.FreeBusyConnections.
+						FirstOrDefault(x =>
+							x.Busy == false &&
+							DateTime.Compare(
+								x.DateRange.StartDate, earliestDate) >= 0);
+				}
+			}
+			return result;
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* GetLastTaskIndex																											*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Return the index of the last directly linked task in the specified
+		/// task's family.
+		/// </summary>
+		/// <param name="tasks">
+		/// Reference to the collection to search.
+		/// </param>
+		/// <param name="task">
+		/// Reference to the task to search for.
+		/// </param>
+		/// <returns>
+		/// The maximum index of the specified task and all of its descendants
+		/// in the provided list, if found. Otherwise, -1.
+		/// </returns>
+		private static int GetLastTaskIndex(List<TaskItem> tasks, TaskItem task)
+		{
+			List<TaskItem> descendants = null;
+			int index = -1;
+
+			if(tasks?.Count > 0 && task != null)
+			{
+				descendants = TaskItem.GetDescendants(task);
+				foreach(TaskItem taskItem in descendants)
+				{
+					if(tasks.Contains(taskItem))
+					{
+						index = Math.Max(index, tasks.IndexOf(taskItem));
+					}
+				}
+			}
+			return index;
 		}
 		//*-----------------------------------------------------------------------*
 
@@ -637,7 +1156,7 @@ namespace ProjectTask
 			{
 				foreach(TaskItem taskItem in tasks)
 				{
-					taskItem.ExtendedProperties.SetValue("Estimated", "0");
+					taskItem.ExtendedProperties.SetValue("Calculated", "0");
 					taskItem.CalculatedStartDate = DateTime.MinValue;
 					taskItem.CalculatedEndDate = DateTime.MinValue;
 					taskItem.CalculatedTimeElapsed =
@@ -688,14 +1207,21 @@ namespace ProjectTask
 			int index = 0;
 			List<DateRangeItem> renderedDates = null;
 			List<DateRangeItem> runningDates = new List<DateRangeItem>();
-			TimeSpan timeSpan = new TimeSpan(24, 0, 0);
+			TimeSpan timeSpan =
+				(currentDate.Date + new TimeSpan(24, 0, 0)) - currentDate;
 
 			if(mProjectFile != null && allocations?.Count > 0 && totalTime > 0f)
 			{
 				foreach(ContactAllocationItem allocationItem in allocations)
 				{
 					//	Current contact.
+					//	Repeat entire open schedule for all contacts, where possible.
+					currentDate = DateTime.Now + new TimeSpan(1, 0, 0);
+					timeSpan =
+						(currentDate.Date + new TimeSpan(24, 0, 0)) - currentDate;
+					currentTime = totalTime;
 					contact = allocationItem.Contact;
+					dayIndex = 0;
 					while(currentTime > 0f && dayIndex < 366)
 					{
 						foreach(TimeBlockItem blockItem in allocationItem.TimeBlocks)
@@ -724,10 +1250,18 @@ namespace ProjectTask
 									}
 								}
 								currentTime -= DateRangeCollection.TotalHours(renderedDates);
+								if(currentTime < 0f)
+								{
+									currentTime = 0f;
+								}
 							}
 						}
-						dayIndex++;
 						currentDate += timeSpan;
+						if(dayIndex == 0)
+						{
+							timeSpan = new TimeSpan(24, 0, 0);
+						}
+						dayIndex++;
 					}
 				}
 			}
@@ -778,133 +1312,6 @@ namespace ProjectTask
 				}
 			}
 			return result;
-		}
-		//*-----------------------------------------------------------------------*
-
-		//*-----------------------------------------------------------------------*
-		//* MatchTasks																														*
-		//*-----------------------------------------------------------------------*
-		/// <summary>
-		/// Match the estimated tasks to the available contact time.
-		/// </summary>
-		/// <param name="contactAllocations">
-		/// Reference to the collection of contact time allocations,
-		/// associated tasks, and free/busy connectors.
-		/// </param>
-		/// <param name="tasks">
-		/// Reference to the collection of all tasks currently in review.
-		/// </param>
-		/// <returns>
-		/// Reference to a collection of Free/Busy connectors created to
-		/// associate with the contacts and tasks.
-		/// </returns>
-		private static List<FreeBusyItem> MatchTasks(
-			List<ContactAllocationItem> contactAllocations, List<TaskItem> tasks)
-		{
-			FreeBusyItem availableTime = null;
-			DateTime endDate = DateTime.MinValue;
-			FreeBusyItem freeBusy = null;
-			List<FreeBusyItem> freeBusyItems = new List<FreeBusyItem>();
-			float hoursAvailable = 0f;
-			float hoursOutstanding = 0f;
-			int passCount = 10;
-			int passIndex = 0;
-
-			if(contactAllocations?.Count > 0)
-			{
-				for(passIndex = 0; passIndex < passCount; passIndex ++)
-				{
-					foreach(ContactAllocationItem allocationItem in contactAllocations)
-					{
-						foreach(TaskItem taskItem in allocationItem.Tasks)
-						{
-							hoursOutstanding =
-								taskItem.CalculatedTimeEstimated -
-								taskItem.CalculatedTimeElapsed;
-							if(hoursOutstanding < 0f)
-							{
-								hoursOutstanding = 0f;
-							}
-							if(hoursOutstanding > 0f &&
-								AllChildTasksCalculated(tasks, taskItem) &&
-								AllDependentTasksCalculated(tasks, taskItem))
-							{
-								//	Still work to do on this task.
-								availableTime = null;
-								if(DateTime.Compare(taskItem.StartDate,
-									DateTime.MinValue) == 0 ||
-									DateTime.Compare(taskItem.StartDate, DateTime.Today) <= 0)
-								{
-									//	Work can start at any time.
-									availableTime = allocationItem.FreeBusyConnections.
-										FirstOrDefault(x =>
-											x.Busy == false &&
-											DateTime.Compare(
-												x.DateRange.StartDate, DateTime.Today) >= 0);
-								}
-								else
-								{
-									//	Get the first available time after the start date.
-									availableTime = allocationItem.FreeBusyConnections.
-										FirstOrDefault(x =>
-											x.Busy == false &&
-											DateTime.Compare(
-												x.DateRange.StartDate, taskItem.StartDate) >= 0);
-								}
-								if(availableTime != null)
-								{
-									//	Apply the available time to this task.
-									freeBusy = new FreeBusyItem()
-									{
-										Busy = true,
-										Contact = allocationItem.Contact,
-										Task = taskItem,
-										TimeNotation = availableTime.TimeNotation
-									};
-									hoursAvailable =
-										DateRangeItem.TotalHours(availableTime.DateRange);
-									if(hoursAvailable >= hoursOutstanding)
-									{
-										//	Clear out the task calculation.
-										endDate = availableTime.DateRange.EndDate;
-										freeBusy.DateRange.StartDate =
-											availableTime.DateRange.StartDate;
-										freeBusy.DateRange.Duration =
-											ToTimeSpan(hoursOutstanding);
-										availableTime.DateRange.StartDate =
-											freeBusy.DateRange.EndDate;
-										availableTime.DateRange.EndDate = endDate;
-										taskItem.CalculatedTimeElapsed =
-											taskItem.CalculatedTimeEstimated;
-									}
-									else
-									{
-										//	Apply all of the available hours for this entry.
-										freeBusy.DateRange.StartDate =
-											availableTime.DateRange.StartDate;
-										freeBusy.DateRange.EndDate =
-											availableTime.DateRange.EndDate;
-										taskItem.CalculatedTimeElapsed += hoursAvailable;
-									}
-									freeBusyItems.Add(freeBusy);
-								}
-							}
-						}
-					}
-					if(AllTasksCalculated(tasks))
-					{
-						break;
-					}
-				}
-				foreach(TaskItem taskItem in tasks)
-				{
-					taskItem.CalculatedStartDate =
-						GetEarliestStartDate(freeBusyItems, taskItem);
-					taskItem.CalculatedEndDate =
-						GetLatestEndDate(freeBusyItems, taskItem);
-				}
-			}
-			return freeBusyItems;
 		}
 		//*-----------------------------------------------------------------------*
 
@@ -1001,30 +1408,34 @@ namespace ProjectTask
 		/// </returns>
 		public List<FreeBusyItem> CalculateTask(TaskItem task)
 		{
-			List<ContactAllocationItem> contactAllocations = null;
-			List<TaskItem> tasks = new List<TaskItem>();
+			//List<ContactAllocationItem> contactAllocations = null;
+			//List<TaskItem> tasks = new List<TaskItem>();
 			List<FreeBusyItem> schedule = new List<FreeBusyItem>();
 			float totalTime = 0f;
 
+			//	TODO: Remove redundant references to Tasks and ContactAllocations.
 			if(mProjectFile != null && task != null && IsOpen(task.ItemStatus))
 			{
-				AddChildTasks(task, tasks);
-				tasks.Add(task);
-				AddDependentTasks(tasks);
-				InitializeCalculations(tasks);
+				mRunningFreeBusy = schedule;
+				mTasks = new List<TaskItem>();
+				mContactAllocations = new List<ContactAllocationItem>();
+
+				AddChildTasks(task, mTasks);
+				mTasks.Add(task);
+				AddDependentTasks(mTasks);
+				InitializeCalculations(mTasks);
 
 				//	Tasks are ready.
-				totalTime = TaskCollection.GetTotalOutstandingEstimatedTime(tasks);
+				totalTime = TaskCollection.GetTotalOutstandingEstimatedTime(mTasks);
 
-				contactAllocations = AssignContacts(tasks);
-				InitializeSchedule(contactAllocations, totalTime);
+				mContactAllocations = AssignContacts(mTasks);
+				InitializeSchedule(mContactAllocations, totalTime);
 
 				//	Contacts are ready.
-				//	!1 - Stopped here...
-				//	TODO: Render the calculated schedule.
-				MatchTasks(contactAllocations, tasks);
+				schedule.AddRange(AssignTasks(mContactAllocations, mTasks));
+				schedule.RemoveAll(x => x.Busy == false);
 
-				FinalizeCalculations(tasks);
+				FinalizeCalculations(mTasks);
 			}
 			return schedule;
 		}

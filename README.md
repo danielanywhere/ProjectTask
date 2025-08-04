@@ -128,7 +128,7 @@ Thanks to decades of previous system users, inspiration, late-night
 debugging, and the enduring spirit of old-school development
 environments.  
   
-<blockquote>"Who says you couldn’t do OOP in C? You just more elbow room for
-getting it done right."
+<blockquote>"Who says you couldn’t do OOP in C? You just had more elbow room
+for getting it done right."
 
 *-Daniel Patterson*</blockquote>

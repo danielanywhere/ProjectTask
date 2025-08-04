@@ -51,7 +51,7 @@ namespace ProjectTask
 			TimeNotationDateItem result = new TimeNotationDateItem
 			{
 				TimeNotation = timeNotation,
-				DateRange = dateRange
+				DateRange = DateRangeItem.Clone(dateRange)
 			};
 			this.Add(result);
 

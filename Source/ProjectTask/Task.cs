@@ -43,6 +43,25 @@ namespace ProjectTask
 		//*************************************************************************
 		//*	Protected																															*
 		//*************************************************************************
+		//*-----------------------------------------------------------------------*
+		//* OnAdd																																	*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Raises the ItemAdded event when an item has been added to the
+		/// collection.
+		/// </summary>
+		/// <param name="item">
+		/// Reference to the item being added to the collection.
+		/// </param>
+		protected override void OnAdd(TaskItem item)
+		{
+			if(item != null && item.ParentTask == null && this.mParentTask != null)
+			{
+				item.ParentTask = this.mParentTask;
+			}
+			base.OnAdd(item);
+		}
+		//*-----------------------------------------------------------------------*
 
 		//*************************************************************************
 		//*	Public																																*
@@ -303,6 +322,24 @@ namespace ProjectTask
 				result = tasks.Sum(x => x.CalculatedTimeEstimated);
 			}
 			return result;
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//*	ParentTask																														*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Private member for <see cref="ParentTask">ParentTask</see>.
+		/// </summary>
+		private TaskItem mParentTask = null;
+		/// <summary>
+		/// Get/Set a reference to the parent task to which this collection
+		/// belongs.
+		/// </summary>
+		public TaskItem ParentTask
+		{
+			get { return mParentTask; }
+			set { mParentTask = value; }
 		}
 		//*-----------------------------------------------------------------------*
 
@@ -741,6 +778,7 @@ namespace ProjectTask
 			mTasks.CollectionChanged += mTasks_CollectionChanged;
 			mTasks.ItemAdded += mTasks_ItemAdded;
 			mTasks.ItemPropertyChanged += mTasks_ItemPropertyChanged;
+			mTasks.ParentTask = this;
 			mTeamContacts = new ContactCollection();
 			mTeamContacts.CollectionChanged += mTeamContacts_CollectionChanged;
 			mTeamContacts.ItemAdded += mTeamContacts_ItemAdded;
@@ -1105,6 +1143,62 @@ namespace ProjectTask
 					OnPropertyChanged();
 				}
 			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* FillDescendants																												*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Fill the supplied target list with the descentant tasks specified in
+		/// the source.
+		/// </summary>
+		/// <param name="source">
+		/// Reference to the base collection of descentant tasks to add to the
+		/// target list.
+		/// </param>
+		/// <param name="target">
+		/// Reference to the target collection that will be receiving all of the
+		/// found items at every level.
+		/// </param>
+		public static void FillDescendants(List<TaskItem> source,
+			List<TaskItem> target)
+		{
+			if(source?.Count > 0 && target != null)
+			{
+				foreach(TaskItem taskItem in source)
+				{
+					target.Add(taskItem);
+					FillDescendants(taskItem.mTasks, target);
+				}
+			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* GetDescendants																												*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Return a list of the specified task and all of its relations.
+		/// </summary>
+		/// <param name="task">
+		/// Reference to the task whose descendants will be enumerated.
+		/// </param>
+		/// <returns>
+		/// Reference to a collection of tasks representing the descendants of
+		/// the specified task, having the specified task is the first item in
+		/// the list.
+		/// </returns>
+		public static List<TaskItem> GetDescendants(TaskItem task)
+		{
+			List<TaskItem> result = new List<TaskItem>();
+
+			if(task != null)
+			{
+				result.Add(task);
+				FillDescendants(task.mTasks, result);
+			}
+			return result;
 		}
 		//*-----------------------------------------------------------------------*
 

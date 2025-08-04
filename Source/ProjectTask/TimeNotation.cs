@@ -246,17 +246,32 @@ namespace ProjectTask
 		private static bool GetDayOfWeekMatching(DateRangeItem range,
 			TimeNotationItem time)
 		{
-			bool rv = false;
-			ScheduleWeekDay wd = (ScheduleWeekDay)
-				Enum.Parse(typeof(ScheduleWeekDay),
-				range.StartDate.DayOfWeek.ToString(), true);
+			DateTime dateWorking = DateTime.MinValue;
+			ScheduleWeekDay dayOfWeek = ScheduleWeekDay.None;
+			bool result = false;
 
-			if((time.RepetitionWeekday & wd) != ScheduleWeekDay.None)
+			if(range != null)
 			{
-				rv = true;
-			}
+				if(time.mRepetitionRate == ScheduleRepetitionRate.Weekday)
+				{
+					//	Each Weekday.
+					dateWorking = range.StartDate;
+					result = (int)dateWorking.DayOfWeek > 0 &&
+						(int)dateWorking.DayOfWeek < 6;
+				}
+				else
+				{
+					dayOfWeek = (ScheduleWeekDay)
+						Enum.Parse(typeof(ScheduleWeekDay),
+						range.StartDate.DayOfWeek.ToString(), true);
+					if((time.RepetitionWeekday & dayOfWeek) != ScheduleWeekDay.None)
+					{
+						result = true;
+					}
+				}
 
-			return rv;
+			}
+			return result;
 		}
 		//*-----------------------------------------------------------------------*
 
@@ -787,6 +802,7 @@ namespace ProjectTask
 					//	If the first date doesn't match the template, then the
 					//	first following match will be used as the first reference.
 					SetNextMatchingDayOfWeek(dateRange, time);
+					bUpdated = true;
 				}
 
 				while(DateTime.Compare(scope.EndDate, dateRange.StartDate) > 0 &&
@@ -1424,7 +1440,8 @@ namespace ProjectTask
 		/// <summary>
 		/// Private member for <see cref="ActivePeriod">ActivePeriod</see>.
 		/// </summary>
-		private ScheduleActivePeriod mActivePeriod = ScheduleActivePeriod.None;
+		private ScheduleActivePeriod mActivePeriod =
+			ScheduleActivePeriod.Indefinite;
 		/// <summary>
 		/// Get/Set the selection of the active plan.
 		/// </summary>
@@ -1636,20 +1653,28 @@ namespace ProjectTask
 		/// period.
 		/// </returns>
 		/// <remarks>
-		/// In this version, the 24-hour period begins at the specific time
-		/// provided on the given date and rolls to one second short of the
-		/// same time on the next day.
+		/// In this version, the day period ends at the next stroke of midnight.
 		/// </remarks>
 		public static List<DateRangeItem> RenderDay(TimeNotationItem notation,
 			DateTime date)
 		{
 			List<DateRangeItem> result = new List<DateRangeItem>();
-			DateRangeItem scope =
-				new DateRangeItem(date, new TimeSpan(23, 59, 59));
+			DateRangeItem scope = null;
 			TimeNotationDateCollection times = null;
+			TimeSpan timeSpan =
+				(date.Date + new TimeSpan(24, 0, 0)) - date;
 
+			scope = new DateRangeItem(date, timeSpan);
 			if(notation != null)
 			{
+				if(DateTime.Compare(notation.mStartDate.Date, DateTime.MinValue) == 0)
+				{
+					notation.mStartDate = DateTime.Today + notation.mStartDate.TimeOfDay;
+				}
+				if(DateTime.Compare(notation.mEndDate.Date, DateTime.MinValue) == 0)
+				{
+					notation.mEndDate = DateTime.Today + notation.mEndDate.TimeOfDay;
+				}
 				switch(notation.mRepetitionRate)
 				{
 					case ScheduleRepetitionRate.Day:

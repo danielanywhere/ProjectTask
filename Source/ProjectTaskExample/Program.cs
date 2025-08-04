@@ -75,6 +75,8 @@ namespace ProjectTaskExample
 		{
 			Program app = new Program();
 			app.Run();
+			Console.WriteLine("Press [Enter] to exit...");
+			Console.ReadLine();
 		}
 		//*-----------------------------------------------------------------------*
 
@@ -238,6 +240,7 @@ namespace ProjectTaskExample
 				(ScheduleRepetitionRate.Weekday,
 					new TimeSpan(13, 0, 0), new TimeSpan(17, 0, 0))
 			);
+			timeBlockWeekday.ExtendedProperties.SetValue("Default", "1");
 			projectFile.TimeBlocks.Add(timeBlockWeekday);
 
 			projectFile.FreeBusyConnectors.Clear();
