@@ -22,6 +22,8 @@ using System.Text;
 
 using Newtonsoft.Json;
 
+using static ProjectTask.ProjectTaskUtil;
+
 namespace ProjectTask
 {
 	//*-------------------------------------------------------------------------*
@@ -141,6 +143,19 @@ namespace ProjectTask
 		//*	Public																																*
 		//*************************************************************************
 		//*-----------------------------------------------------------------------*
+		//*	_Constructor																													*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Create a new instance of the FreeBusyItem item.
+		/// </summary>
+		public FreeBusyItem()
+		{
+			mItemId = mNextItemId++;
+			ActiveProjectContext.FreeBusyConnectors.Add(this);
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
 		//*	Busy																																	*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
@@ -189,7 +204,6 @@ namespace ProjectTask
 					mBusy = freeBusyItem.mBusy,
 					mContact = freeBusyItem.mContact,
 					mDateRange = freeBusyItem.mDateRange,
-					mItemId = freeBusyItem.mItemId,
 					mItemTicket = freeBusyItem.mItemTicket,
 					mTask = freeBusyItem.mTask,
 					mTimeNotation = TimeNotationItem.Clone(freeBusyItem.mTimeNotation)
@@ -332,20 +346,19 @@ namespace ProjectTask
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
-		//*	Parent																																*
+		//*	NextItemId																														*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
-		/// Private member for <see cref="Parent">Parent</see>.
+		/// Private member for <see cref="NextItemId">NextItemId</see>.
 		/// </summary>
-		private IParentCollection mParent = null;
+		private static int mNextItemId = 1;
 		/// <summary>
-		/// Get/Set a reference to the collection of which this item is a member.
+		/// Get/Set the next local item ID for this record.
 		/// </summary>
-		[JsonIgnore]
-		public IParentCollection Parent
+		public static int NextItemId
 		{
-			get { return mParent; }
-			set { mParent = value; }
+			get { return mNextItemId; }
+			set { mNextItemId = value; }
 		}
 		//*-----------------------------------------------------------------------*
 
@@ -526,22 +539,23 @@ namespace ProjectTask
 		{
 			StringBuilder builder = new StringBuilder();
 
-			builder.Append("Free/Busy:");
+			builder.Append("Free/Busy:  ");
 			builder.Append(mBusy ? "Busy" : "Free");
-			builder.Append(";Time:");
-			builder.Append(mDateRange.StartDate.ToString("yyyy-MM-dd.HH:mm"));
-			builder.Append("to");
-			builder.Append(mDateRange.EndDate.ToString("yyyy-MM-dd.HH:mm"));
-			builder.Append(";Task:");
+			builder.Append(";\r\n Time:       ");
+			builder.Append(mDateRange.StartDate.ToString("yyyy-MM-dd HH:mm"));
+			builder.Append(" to ");
+			builder.Append(mDateRange.EndDate.ToString("yyyy-MM-dd HH:mm"));
+			builder.Append(";\r\n Task:       ");
 			if(mTask != null)
 			{
 				builder.Append(mTask.DisplayName);
+				builder.Append($" ({mTask.EstimatedManHours:0.0}hr)");
 			}
 			else
 			{
 				builder.Append("(none)");
 			}
-			builder.Append(";Contact:");
+			builder.Append(";\r\n Contact:    ");
 			if(mContact != null)
 			{
 				builder.Append(mContact.DisplayName);
@@ -550,7 +564,7 @@ namespace ProjectTask
 			{
 				builder.Append("(none)");
 			}
-			builder.Append($";Id:{mItemId}");
+			builder.Append($";\r\n Id:         {mItemId}\r\n");
 			return builder.ToString();
 		}
 		//*-----------------------------------------------------------------------*

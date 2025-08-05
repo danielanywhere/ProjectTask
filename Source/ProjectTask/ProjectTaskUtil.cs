@@ -42,19 +42,23 @@ namespace ProjectTask
 		//*	Public																																*
 		//*************************************************************************
 		//*-----------------------------------------------------------------------*
-		//*	ActiveFile																														*
+		//*	ActiveProjectContext																									*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
-		/// Private member for <see cref="ActiveFile">ActiveFile</see>.
+		/// Private member for
+		/// <see cref="ActiveProjectContext">ActiveProjectContext</see>.
 		/// </summary>
-		private static ProjectFile mActiveFile = new ProjectFile();
+		private static ProjectContext mActiveProjectContext = new ProjectContext();
 		/// <summary>
 		/// Get/Set a reference to the active file in this session.
 		/// </summary>
-		public static ProjectFile ActiveFile
+		/// <remarks>
+		/// Everything going on with items is contained here...
+		/// </remarks>
+		public static ProjectContext ActiveProjectContext
 		{
-			get { return mActiveFile; }
-			set { mActiveFile = value; }
+			get { return mActiveProjectContext; }
+			set { mActiveProjectContext = value; }
 		}
 		//*-----------------------------------------------------------------------*
 

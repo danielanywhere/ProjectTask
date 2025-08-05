@@ -36,7 +36,7 @@ namespace ProjectTask
 	/// <typeparam name="T">
 	/// Any type for which change handling will be configured.
 	/// </typeparam>
-	public class ChangeObjectCollection<T> : List<T>, IParentCollection
+	public class ChangeObjectCollection<T> : List<T>
 	{
 		//*************************************************************************
 		//*	Private																																*
@@ -134,24 +134,16 @@ namespace ProjectTask
 		{
 			if(item != null)
 			{
-				if(item is IItem @itemInterface && itemInterface.ItemId == 0)
+				if(!this.Contains(item))
 				{
-					if(mProjectFile != null)
+					if(item is ChangeObjectItem @objectItem)
 					{
-						itemInterface.ItemId = mNextItemId++;
+						objectItem.PropertyChanged += OnItemPropertyChanged;
 					}
-					if(itemInterface.Parent == null || mProjectFile != null)
-					{
-						itemInterface.Parent = this;
-					}
+					base.Add(item);
+					OnAdd(item);
+					OnCollectionChanged("Add");
 				}
-				if(item is ChangeObjectItem @objectItem)
-				{
-					objectItem.PropertyChanged += OnItemPropertyChanged;
-				}
-				base.Add(item);
-				OnAdd(item);
-				OnCollectionChanged("Add");
 			}
 		}
 		//*-----------------------------------------------------------------------*
@@ -171,21 +163,16 @@ namespace ProjectTask
 			{
 				foreach(T tItem in collection)
 				{
-					if(tItem is IItem @itemInterface)
+					if(!this.Contains(tItem))
 					{
-						itemInterface.ItemId = mNextItemId++;
-						if(itemInterface.Parent == null)
+						if(tItem is ChangeObjectItem @objectItem)
 						{
-							itemInterface.Parent = this;
+							objectItem.PropertyChanged += OnItemPropertyChanged;
 						}
+						base.Add(tItem);
+						OnAdd(tItem);
+						OnCollectionChanged("Add");
 					}
-					if(tItem is ChangeObjectItem @objectItem)
-					{
-						objectItem.PropertyChanged += OnItemPropertyChanged;
-					}
-					base.Add(tItem);
-					OnAdd(tItem);
-					OnCollectionChanged("Add");
 				}
 			}
 		}
@@ -229,17 +216,16 @@ namespace ProjectTask
 		{
 			if(index > -1 && item != null)
 			{
-				if(item is IItem @itemInterface)
+				if(!this.Contains(item))
 				{
-					itemInterface.ItemId = mNextItemId++;
+					if(item is ChangeObjectItem @objectItem)
+					{
+						objectItem.PropertyChanged += OnItemPropertyChanged;
+					}
+					base.Insert(index, item);
+					OnAdd(item);
+					OnCollectionChanged("Add");
 				}
-				if(item is ChangeObjectItem @objectItem)
-				{
-					objectItem.PropertyChanged += OnItemPropertyChanged;
-				}
-				base.Insert(index, item);
-				OnAdd(item);
-				OnCollectionChanged("Add");
 			}
 		}
 		//*-----------------------------------------------------------------------*
@@ -264,17 +250,16 @@ namespace ProjectTask
 			{
 				foreach(T tItem in collection)
 				{
-					if(tItem is IItem @itemInterface)
+					if(!this.Contains(tItem))
 					{
-						itemInterface.ItemId = mNextItemId++;
+						if(tItem is ChangeObjectItem @objectItem)
+						{
+							objectItem.PropertyChanged += OnItemPropertyChanged;
+						}
+						base.Insert(activeIndex++, tItem);
+						OnAdd(tItem);
+						OnCollectionChanged("Add");
 					}
-					if(tItem is ChangeObjectItem @objectItem)
-					{
-						objectItem.PropertyChanged += OnItemPropertyChanged;
-					}
-					base.Insert(activeIndex++, tItem);
-					OnAdd(tItem);
-					OnCollectionChanged("Add");
 				}
 			}
 		}
@@ -307,58 +292,23 @@ namespace ProjectTask
 		public event EventHandler<ItemEventArgs<T>> ItemRemoved;
 		//*-----------------------------------------------------------------------*
 
-		//*-----------------------------------------------------------------------*
-		//*	NextItemId																														*
-		//*-----------------------------------------------------------------------*
-		/// <summary>
-		/// Private member for <see cref="NextItemId">NextItemId</see>.
-		/// </summary>
-		private int mNextItemId = 1;
+		////*-----------------------------------------------------------------------*
+		////*	ProjectContext																												*
+		////*-----------------------------------------------------------------------*
 		///// <summary>
-		///// Get/Set the next local item ID.
+		///// Private member for <see cref="ProjectFile">ProjectFile</see>.
+		///// </summary>
+		//private ProjectTask.ProjectContext mProjectFile = null;
+		///// <summary>
+		///// Get/Set a reference to the project object model to which it belongs.
 		///// </summary>
 		//[JsonIgnore]
-		//public int NextItemId
+		//public ProjectTask.ProjectContext ProjectFile
 		//{
-		//	get { return mNextItemId; }
-		//	set { mNextItemId = value; }
+		//	get { return mProjectFile; }
+		//	set { mProjectFile = value; }
 		//}
-		//*-----------------------------------------------------------------------*
-
-		//*-----------------------------------------------------------------------*
-		//*	Parent																																*
-		//*-----------------------------------------------------------------------*
-		/// <summary>
-		/// Private member for <see cref="Parent">Parent</see>.
-		/// </summary>
-		private IParentCollection mParent = null;
-		/// <summary>
-		/// Get/Set a reference to the parent collection.
-		/// </summary>
-		public IParentCollection Parent
-		{
-			get { return mParent; }
-			set { mParent = value; }
-		}
-		//*-----------------------------------------------------------------------*
-
-		//*-----------------------------------------------------------------------*
-		//*	ProjectFile																														*
-		//*-----------------------------------------------------------------------*
-		/// <summary>
-		/// Private member for <see cref="ProjectFile">ProjectFile</see>.
-		/// </summary>
-		private ProjectTask.ProjectFile mProjectFile = null;
-		/// <summary>
-		/// Get/Set a reference to the project object model to which it belongs.
-		/// </summary>
-		[JsonIgnore]
-		public ProjectTask.ProjectFile ProjectFile
-		{
-			get { return mProjectFile; }
-			set { mProjectFile = value; }
-		}
-		//*-----------------------------------------------------------------------*
+		////*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
 		//*	PropertyName																													*

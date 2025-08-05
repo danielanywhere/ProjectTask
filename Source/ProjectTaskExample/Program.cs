@@ -91,7 +91,8 @@ namespace ProjectTaskExample
 			int count = 0;
 			List<FreeBusyItem> freeBusyItems = null;
 			int index = 0;
-			ProjectFile projectFile = new ProjectFile();
+			TaskItem project = null;
+			ProjectContext projectContext = ActiveProjectContext;
 			ScheduleEngine scheduler = null;
 			TaskItem task = null;
 			List<TaskItem> tasks = null;
@@ -101,18 +102,18 @@ namespace ProjectTaskExample
 
 			//	Configure the base data.
 			//	Task states.
-			projectFile.TaskStates.Add(
+			projectContext.TaskStates.Add(
 				("TODO", ProjectTaskStateEnum.Queued),
 				("InProgress", ProjectTaskStateEnum.Active),
 				("Completed", ProjectTaskStateEnum.Closed));
 
 			//	Task types.
-			projectFile.TaskTypes.Add(
+			projectContext.TaskTypes.Add(
 				("Project", ProjectTaskTypeEnum.Project),
 				("Task", ProjectTaskTypeEnum.Task));
 
 			//	Configure the users.
-			projectFile.Contacts.Add(
+			projectContext.Contacts.Add(
 				("Pickle Featherstone", "pickle.featherstone@quirkymail.com"),
 				("Waffle McSnort", "waffle.mcsnort@laughnet.com"),
 				("Sassy Bumbleshoe", "sassy.bumbleshoe@buzzmail.io"),
@@ -122,11 +123,11 @@ namespace ProjectTaskExample
 			//	When assigning supervisor, you can remove spaces or used the unique
 			//	portion of the display name. The report is first, the supervisor is
 			//	second.
-			projectFile.Contacts.AssignSupervisor("WaffleMcSnort", "Tater");
-			projectFile.Contacts.AssignSupervisor("Barkley", "Tater");
+			projectContext.Contacts.AssignSupervisor("WaffleMcSnort", "Tater");
+			projectContext.Contacts.AssignSupervisor("Barkley", "Tater");
 
 			//	Create a project.
-			tasks = projectFile.Tasks.Add(
+			tasks = projectContext.Tasks.Add(
 				("Maiden Project", "Create a new project-level task.",
 					"Project", "InProgress"),
 				("Kick-Off Task", "Create a new task.",
@@ -145,7 +146,7 @@ namespace ProjectTaskExample
 				}
 			}
 			//	Create another project.
-			tasks = projectFile.Tasks.Add(
+			tasks = projectContext.Tasks.Add(
 				("Echoes of Tomorrow", "Develop a **biodegradable, " +
 				"plant-based sensor network** designed to monitor subtle " +
 				"environmental shifts in vulnerable ecosystems. " +
@@ -191,7 +192,7 @@ namespace ProjectTaskExample
 			//	Tasks can also be bulk-assigned programmatically, using the
 			//	AssociateTasksByName function.
 			Console.WriteLine("Associate 3 tasks to Echoes of Tomorrow...");
-			count = projectFile.Tasks.AssociateTasksByName("Echoes of Tomorrow",
+			count = projectContext.Tasks.AssociateTasksByName("Echoes of Tomorrow",
 				"Microbial Fuel Cell Optimization",
 				"Biodegradable Polymer Casing Development",
 				"Wireless Data Transmission Protocol Design");
@@ -205,7 +206,7 @@ namespace ProjectTaskExample
 				Console.WriteLine(" Great: 3 tasks have been associated.");
 			}
 
-			task = projectFile.Tasks["EchoesOfTomorrow"];
+			task = projectContext.Tasks["EchoesOfTomorrow"];
 			if(task != null)
 			{
 				//	Project found using compact format.
@@ -213,12 +214,12 @@ namespace ProjectTaskExample
 				task.Dependencies.Add(new DependencyItem()
 				{
 					DependencyType = DependencyTypeEnum.StartOnCompletion,
-					RemoteDependency = projectFile.Tasks["MaidenProject"]
+					RemoteDependency = projectContext.Tasks["MaidenProject"]
 				});
 			}
 
 			//	Create time estimates for all of the tasks.
-			tasks = projectFile.Tasks.FindAll(x =>
+			tasks = projectContext.Tasks.FindAll(x =>
 				CompactValue(x.ItemType?.DisplayName) == "task");
 			foreach(TaskItem taskItem in tasks)
 			{
@@ -241,19 +242,34 @@ namespace ProjectTaskExample
 					new TimeSpan(13, 0, 0), new TimeSpan(17, 0, 0))
 			);
 			timeBlockWeekday.ExtendedProperties.SetValue("Default", "1");
-			projectFile.TimeBlocks.Add(timeBlockWeekday);
+			projectContext.TimeBlocks.Add(timeBlockWeekday);
 
-			projectFile.FreeBusyConnectors.Clear();
-			projectFile.Tasks.ClearCalculatedFlag();
+			projectContext.FreeBusyConnectors.Clear();
+			projectContext.Tasks.ClearCalculatedFlag();
 
-			scheduler = new ScheduleEngine(projectFile);
+			scheduler = new ScheduleEngine(projectContext);
 			//	Estimate the first project first.
 			freeBusyItems =
-				scheduler.CalculateTask(projectFile.Tasks["MaidenProject"]);
+				scheduler.CalculateTask(projectContext.Tasks["MaidenProject"]);
 			Console.WriteLine("Schedule Entries:");
 			foreach(FreeBusyItem freeBusyItem in freeBusyItems)
 			{
 				Console.WriteLine($" {freeBusyItem}");
+			}
+
+			Console.WriteLine("Clearing Project Context...");
+			ActiveProjectContext.Clear();
+			project = new TaskItem("Main Project");
+			task = project.Tasks.Add("Design Module");
+
+			task.Dependencies.Add(
+				"Requirements Gathering",
+				DependencyTypeEnum.StartOnCompletion);
+
+			Console.WriteLine("Tasks Created:");
+			foreach(TaskItem taskItem in ActiveProjectContext.Tasks)
+			{
+				Console.WriteLine($" {taskItem.DisplayName}");
 			}
 		}
 		//*-----------------------------------------------------------------------*

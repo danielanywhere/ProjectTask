@@ -18,10 +18,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+
+using static ProjectTask.ProjectTaskUtil;
 
 namespace ProjectTask
 {
@@ -42,6 +45,56 @@ namespace ProjectTask
 		//*************************************************************************
 		//*	Public																																*
 		//*************************************************************************
+		//*-----------------------------------------------------------------------*
+		//*	Add																																		*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Add an item to the collection by member values.
+		/// </summary>
+		/// <param name="dependencyTaskDisplayName">
+		/// Display name of the task upon which this item will be dependent.
+		/// </param>
+		/// <param name="dependencyType">
+		/// The type of dependency to set on the specified task.
+		/// </param>
+		/// <returns>
+		/// Reference to the newly created and added dependency, if legitimate.
+		/// Otherwise, null.
+		/// </returns>
+		public DependencyItem Add(string dependencyTaskDisplayName,
+			DependencyTypeEnum dependencyType)
+		{
+			DependencyItem result = null;
+			TaskItem task = null;
+
+			if(dependencyTaskDisplayName?.Length > 0)
+			{
+				task = ActiveProjectContext.Tasks.FirstOrDefault(x =>
+					CompactEqual(x.DisplayName, dependencyTaskDisplayName));
+				if(task == null)
+				{
+					task = new TaskItem()
+					{
+						DisplayName = dependencyTaskDisplayName
+					};
+				}
+				result = this.FirstOrDefault(x =>
+					x.RemoteDependency.ItemId == task.ItemId);
+				if(result == null)
+				{
+					//	The item is not registered in this collection.
+					result = new DependencyItem()
+					{
+						DependencyType = dependencyType,
+						RemoteDependency = task
+					};
+					this.Add(result);
+				}
+			}
+			return result;
+		}
+		//*-----------------------------------------------------------------------*
+
 
 
 	}
@@ -87,6 +140,19 @@ namespace ProjectTask
 		//*************************************************************************
 		//*	Public																																*
 		//*************************************************************************
+		//*-----------------------------------------------------------------------*
+		//*	_Constructor																													*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Create a new instance of the DependencyItem item.
+		/// </summary>
+		public DependencyItem()
+		{
+			ItemId = NextItemId++;
+			ActiveProjectContext.Dependencies.Add(this);
+		}
+		//*-----------------------------------------------------------------------*
+
 		//*-----------------------------------------------------------------------*
 		//*	DependencyDate																												*
 		//*-----------------------------------------------------------------------*

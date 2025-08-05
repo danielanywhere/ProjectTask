@@ -38,6 +38,17 @@ dotnet_diagnostic.CA1305.severity = none
 dotnet_diagnostic.CA1711.severity = none
 # CA1805: Allow (and potentially require) explicit initialization to default value.
 dotnet_diagnostic.CA1805.severity = none
+# IDE1006: The word must begin with a lower case letter.
+dotnet_diagnostic.IDE1006.severity = none
+# IDE0017: Initialization can be simplified.
+dotnet_diagnostic.IDE0017.severity = none
+# IDE0034: Expression can be simplified.
+dotnet_diagnostic.IDE0034.severity = none
+# IDE0044: Make field readonly.
+dotnet_diagnostic.IDE0044.severity = none
+# IDE0059: Unnecessary assignment of a value.
+dotnet_diagnostic.IDE0059.severity = none
+
 
 # New line preferences
 end_of_line = crlf

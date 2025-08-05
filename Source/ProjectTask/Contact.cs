@@ -20,8 +20,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+
+using static ProjectTask.ProjectTaskUtil;
 
 namespace ProjectTask
 {
@@ -248,14 +251,11 @@ namespace ProjectTask
 		private void mSchedule_ItemAdded(object sender,
 			ItemEventArgs<TimeBlockItem> e)
 		{
-			TimeBlockItem block = null;
-
-			if(e.Data != null && Parent?.ProjectFile != null)
+			if(e.Data != null)
 			{
-				block = Parent.ProjectFile.TimeBlocks.FirstOrDefault(x => x == e.Data);
-				if(block == null)
+				if(!ActiveProjectContext.TimeBlocks.Contains(e.Data))
 				{
-					Parent.ProjectFile.TimeBlocks.Add(block);
+					ActiveProjectContext.TimeBlocks.Add(e.Data);
 				}
 			}
 		}
@@ -297,10 +297,12 @@ namespace ProjectTask
 		/// </summary>
 		public ContactItem()
 		{
+			ItemId = NextItemId++;
 			mSchedule = new TimeBlockCollection();
 			mSchedule.CollectionChanged += mSchedule_CollectionChanged;
 			mSchedule.ItemAdded += mSchedule_ItemAdded;
 			mSchedule.ItemPropertyChanged += mSchedule_ItemPropertyChanged;
+			ActiveProjectContext.Contacts.Add(this);
 		}
 		//*-----------------------------------------------------------------------*
 

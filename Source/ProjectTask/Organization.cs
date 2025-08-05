@@ -23,6 +23,8 @@ using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
+using static ProjectTask.ProjectTaskUtil;
+
 namespace ProjectTask
 {
 	//*-------------------------------------------------------------------------*
@@ -87,6 +89,19 @@ namespace ProjectTask
 		//*************************************************************************
 		//*	Public																																*
 		//*************************************************************************
+		//*-----------------------------------------------------------------------*
+		//*	_Constructor																													*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Create a new instance of the OrganizationItem item.
+		/// </summary>
+		public OrganizationItem()
+		{
+			ItemId = NextItemId++;
+			ActiveProjectContext.Organizations.Add(this);
+		}
+		//*-----------------------------------------------------------------------*
+
 		//*-----------------------------------------------------------------------*
 		//*	CityName																															*
 		//*-----------------------------------------------------------------------*

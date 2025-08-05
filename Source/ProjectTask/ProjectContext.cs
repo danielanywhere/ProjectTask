@@ -30,13 +30,13 @@ using static ProjectTask.ProjectTaskUtil;
 namespace ProjectTask
 {
 	//*-------------------------------------------------------------------------*
-	//*	ProjectFile																															*
+	//*	ProjectContext																													*
 	//*-------------------------------------------------------------------------*
 	/// <summary>
-	/// Complete information about an entire set of projects, tasks, resources,
-	/// and schedules.
+	/// Complete application context information about an entire set of
+	/// projects, tasks, resources, and schedules.
 	/// </summary>
-	public class ProjectFile
+	public class ProjectContext
 	{
 		//*************************************************************************
 		//*	Private																																*
@@ -128,26 +128,30 @@ namespace ProjectTask
 		/// Reference to the project file for which the references will be
 		/// resolved.
 		/// </param>
-		private static void ResolveReferences(ProjectFile file)
+		private static void ResolveReferences(ProjectContext file)
 		{
 			ContactItem contact = null;
-			int index = 1;
 			OrganizationItem organization = null;
 			TaskItem task = null;
 			TaskStatusItem taskStatus = null;
 			TaskTypeItem taskType = null;
 
+			//	TODO: Check the following items after deserialization to see if constructors were bypassed.
 			//	Comments.
-			index = 1;
 			foreach(CommentItem commentItem in file.mComments)
 			{
-				commentItem.ItemId = index++;
+				if(commentItem.ItemId == 0)
+				{
+					commentItem.ItemId = CommentItem.NextItemId++;
+				}
 			}
 			//	Contacts.
-			index = 1;
 			foreach(ContactItem contactItem in file.mContacts)
 			{
-				contactItem.ItemId = index++;
+				if(contactItem.ItemId == 0)
+				{
+					contactItem.ItemId = ContactItem.NextItemId++;
+				}
 				if(contactItem.DefaultOrganization != null)
 				{
 					organization = file.mOrganizations.FirstOrDefault(x =>
@@ -169,10 +173,12 @@ namespace ProjectTask
 				ResolveCollection(file.mComments, contactItem.Comments);
 			}
 			//	Dependencies.
-			index = 1;
 			foreach(DependencyItem dependencyItem in file.mDependencies)
 			{
-				dependencyItem.ItemId = index++;
+				if(dependencyItem.ItemId == 0)
+				{
+					dependencyItem.ItemId = DependencyItem.NextItemId++;
+				}
 				if(dependencyItem.RemoteDependency != null)
 				{
 					task = file.mTasks.FirstOrDefault(x =>
@@ -185,10 +191,12 @@ namespace ProjectTask
 				ResolveCollection(file.mComments, dependencyItem.Comments);
 			}
 			//	Free/Busy Connections.
-			index = 1;
 			foreach(FreeBusyItem freeBusyItem in file.mFreeBusyConnectors)
 			{
-				freeBusyItem.ItemId = index++;
+				if(freeBusyItem.ItemId == 0)
+				{
+					freeBusyItem.ItemId = FreeBusyItem.NextItemId++;
+				}
 				if(freeBusyItem.Contact != null)
 				{
 					contact = file.mContacts.FirstOrDefault(x =>
@@ -209,10 +217,12 @@ namespace ProjectTask
 				}
 			}
 			//	Organizations.
-			index = 1;
 			foreach(OrganizationItem organizationItem in file.mOrganizations)
 			{
-				organizationItem.ItemId = index++;
+				if(organizationItem.ItemId == 0)
+				{
+					organizationItem.ItemId = OrganizationItem.NextItemId++;
+				}
 				if(organizationItem.DefaultContact != null)
 				{
 					contact = file.mContacts.FirstOrDefault(x =>
@@ -225,10 +235,12 @@ namespace ProjectTask
 				ResolveCollection(file.mComments, organizationItem.Comments);
 			}
 			//	Tasks.
-			index = 1;
 			foreach(TaskItem taskItem in file.mTasks)
 			{
-				taskItem.ItemId = index++;
+				if(taskItem.ItemId == 0)
+				{
+					taskItem.ItemId = TaskItem.NextItemId++;
+				}
 				if(taskItem.ItemStatus != null)
 				{
 					taskStatus = file.mTaskStates.FirstOrDefault(x =>
@@ -285,27 +297,47 @@ namespace ProjectTask
 			//	Task States.
 			foreach(TaskStatusItem statusItem in file.mTaskStates)
 			{
+				if(statusItem.ItemId == 0)
+				{
+					statusItem.ItemId = TaskStatusItem.NextItemId++;
+				}
 				ResolveCollection(file.mComments, statusItem.Comments);
 			}
 			//	Task Types.
 			foreach(TaskTypeItem typeItem in file.mTaskTypes)
 			{
+				if(typeItem.ItemId == 0)
+				{
+					typeItem.ItemId = TaskTypeItem.NextItemId++;
+				}
 				ResolveCollection(file.mComments, typeItem.Comments);
 			}
 			//	Time Blocks.
 			foreach(TimeBlockItem blockItem in file.mTimeBlocks)
 			{
+				if(blockItem.ItemId == 0)
+				{
+					blockItem.ItemId = TimeBlockItem.NextItemId++;
+				}
 				ResolveCollection(file.mComments, blockItem.Comments);
 				ResolveCollection(file.mTimeNotations, blockItem.Entries);
 			}
 			//	Time Notations.
 			foreach(TimeNotationItem notationItem in file.mTimeNotations)
 			{
+				if(notationItem.ItemId == 0)
+				{
+					notationItem.ItemId = TimeNotationItem.NextItemId++;
+				}
 				ResolveCollection(file.mComments, notationItem.Comments);
 			}
 			//	Timers.
 			foreach(TimerItem timerItem in file.mTimers)
 			{
+				if(timerItem.ItemId == 0)
+				{
+					timerItem.ItemId = TimerItem.NextItemId++;
+				}
 				ResolveCollection(file.mComments, timerItem.Comments);
 			}
 		}
@@ -321,32 +353,43 @@ namespace ProjectTask
 		//*	_Constructor																													*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
-		/// Create a new instance of the ProjectFile item.
+		/// Create a new instance of the ProjectContext item.
 		/// </summary>
-		public ProjectFile()
+		public ProjectContext()
 		{
 			mComments = new CommentCollection();
-			mComments.ProjectFile = this;
 			mContacts = new ContactCollection();
-			mContacts.ProjectFile = this;
 			mDependencies = new DependencyCollection();
-			mDependencies.ProjectFile = this;
 			mFreeBusyConnectors = new FreeBusyCollection();
-			mFreeBusyConnectors.ProjectFile = this;
 			mOrganizations = new OrganizationCollection();
-			mOrganizations.ProjectFile = this;
 			mTasks = new TaskCollection();
-			mTasks.ProjectFile = this;
 			mTaskStates = new TaskStatusCollection();
-			mTaskStates.ProjectFile = this;
 			mTaskTypes = new TaskTypeCollection();
-			mTaskTypes.ProjectFile = this;
 			mTimeBlocks = new TimeBlockCollection();
-			mTimeBlocks.ProjectFile = this;
 			mTimeNotations = new TimeNotationCollection();
-			mTimeNotations.ProjectFile = this;
 			mTimers = new TimerCollection();
-			mTimers.ProjectFile = this;
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* Clear																																	*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Clear the entire contents of the project context.
+		/// </summary>
+		public void Clear()
+		{
+			mComments.Clear();
+			mContacts.Clear();
+			mDependencies.Clear();
+			mFreeBusyConnectors.Clear();
+			mOrganizations.Clear();
+			mTasks.Clear();
+			mTaskStates.Clear();
+			mTaskTypes.Clear();
+			mTimeBlocks.Clear();
+			mTimeNotations.Clear();
+			mTimers.Clear();
 		}
 		//*-----------------------------------------------------------------------*
 
@@ -528,10 +571,10 @@ namespace ProjectTask
 		/// objects in the caller's object model, if the conversion was successful.
 		/// Otherwise, null.
 		/// </returns>
-		public static ProjectFile Clone(ProjectFile projectFile)
+		public static ProjectContext Clone(ProjectContext projectFile)
 		{
 			string content = "";
-			ProjectFile result = null;
+			ProjectContext result = null;
 
 			if(projectFile != null)
 			{
@@ -644,7 +687,7 @@ namespace ProjectTask
 		/// Text version of the project file, in JSON format, if successful.
 		/// Otherwise, an empty string.
 		/// </returns>
-		public static string Pack(ProjectFile fileObject,
+		public static string Pack(ProjectContext fileObject,
 			Action<string> messageHandler = null)
 		{
 			string content = "";
@@ -699,17 +742,17 @@ namespace ProjectTask
 		/// Reference to the object model representation of the caller's project
 		/// file content, if successful. Otherwise, null.
 		/// </returns>
-		public static ProjectFile Parse(string content,
+		public static ProjectContext Parse(string content,
 			Action<string> messageHandler = null)
 		{
 			string message = "";
-			ProjectFile result = null;
+			ProjectContext result = null;
 
 			if(content?.Length > 0)
 			{
 				try
 				{
-					result = JsonConvert.DeserializeObject<ProjectFile>(content);
+					result = JsonConvert.DeserializeObject<ProjectContext>(content);
 					ResolveReferences(result);
 				}
 				catch(Exception ex)
@@ -755,12 +798,12 @@ namespace ProjectTask
 		/// Reference to the object-based representation of the specified file,
 		/// if legitimate. Otherwise, null.
 		/// </returns>
-		public static ProjectFile ReadFile(string filename,
+		public static ProjectContext ReadFile(string filename,
 			Action<string> messageHandler = null)
 		{
 			string content = "";
 			string message = "";
-			ProjectFile result = null;
+			ProjectContext result = null;
 
 			if(filename?.Length > 0)
 			{
@@ -916,7 +959,7 @@ namespace ProjectTask
 		/// messages from this function, in the form of 'static void
 		/// CallbackName(string message);'.
 		/// </param>
-		public static void WriteFile(ProjectFile fileObject, string filename,
+		public static void WriteFile(ProjectContext fileObject, string filename,
 			Action<string> messageHandler = null)
 		{
 			string content = "";

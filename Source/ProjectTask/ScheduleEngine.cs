@@ -1384,7 +1384,7 @@ namespace ProjectTask
 		/// <param name="projectFile">
 		/// Reference to the project file upon which schedules will be created.
 		/// </param>
-		public ScheduleEngine(ProjectFile projectFile)
+		public ScheduleEngine(ProjectContext projectFile)
 		{
 			ProjectFile = projectFile;
 		}
@@ -1432,7 +1432,7 @@ namespace ProjectTask
 				InitializeSchedule(mContactAllocations, totalTime);
 
 				//	Contacts are ready.
-				schedule.AddRange(AssignTasks(mContactAllocations, mTasks));
+				AssignTasks(mContactAllocations, mTasks);
 				schedule.RemoveAll(x => x.Busy == false);
 
 				FinalizeCalculations(mTasks);
@@ -1459,16 +1459,16 @@ namespace ProjectTask
 		////*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
-		//*	ProjectFile																														*
+		//*	ProjectContext																														*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
 		/// Private member for <see cref="ProjectFile">ProjectFile</see>.
 		/// </summary>
-		private ProjectTask.ProjectFile mProjectFile = null;
+		private ProjectTask.ProjectContext mProjectFile = null;
 		/// <summary>
 		/// Get/Set a reference to the project file in use for scheduling.
 		/// </summary>
-		public ProjectTask.ProjectFile ProjectFile
+		public ProjectTask.ProjectContext ProjectFile
 		{
 			get { return mProjectFile; }
 			set
@@ -1476,7 +1476,7 @@ namespace ProjectTask
 				mProjectFile = value;
 				//if(value != null)
 				//{
-				//	mProjectFile = ProjectFile.Clone(value);
+				//	mProjectFile = ProjectContext.Clone(value);
 				//}
 				//else
 				//{

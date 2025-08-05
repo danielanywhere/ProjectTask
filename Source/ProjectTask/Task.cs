@@ -22,6 +22,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
+
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -138,13 +139,14 @@ namespace ProjectTask
 							DisplayName = item.displayName,
 							Description = item.description
 						};
-						if(item.itemType?.Length > 0 && this.ProjectFile != null)
+						if(item.itemType?.Length > 0)
 						{
-							task.ItemType = this.ProjectFile.TaskTypes[item.itemType];
+							task.ItemType = ActiveProjectContext.TaskTypes[item.itemType];
 						}
-						if(item.itemStatus?.Length > 0 && this.ProjectFile != null)
+						if(item.itemStatus?.Length > 0)
 						{
-							task.ItemStatus = this.ProjectFile.TaskStates[item.itemStatus];
+							task.ItemStatus =
+								ActiveProjectContext.TaskStates[item.itemStatus];
 						}
 						this.Add(task);
 						result.Add(task);
@@ -205,6 +207,30 @@ namespace ProjectTask
 						result.Add(task);
 					}
 				}
+			}
+			return result;
+		}
+		//*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*
+		/// <summary>
+		/// Add a task to the collection by display name.
+		/// </summary>
+		/// <param name="displayName">
+		/// Name of the task to create.
+		/// </param>
+		/// <returns>
+		/// Newly created and added task, if legitimate. Otherwise, null.
+		/// </returns>
+		public TaskItem Add(string displayName)
+		{
+			TaskItem result = null;
+
+			if(displayName?.Length > 0)
+			{
+				result = new TaskItem()
+				{
+					DisplayName = displayName
+				};
+				this.Add(result);
 			}
 			return result;
 		}
@@ -394,15 +420,11 @@ namespace ProjectTask
 		private void mDependencies_ItemAdded(object sender,
 			ItemEventArgs<DependencyItem> e)
 		{
-			DependencyItem dependency = null;
-
-			if(e.Data != null && Parent?.ProjectFile != null)
+			if(e.Data != null)
 			{
-				dependency =
-					Parent.ProjectFile.Dependencies.FirstOrDefault(x => x == e.Data);
-				if(dependency == null)
+				if(!ActiveProjectContext.Dependencies.Contains(e.Data))
 				{
-					Parent.ProjectFile.Dependencies.Add(e.Data);
+					ActiveProjectContext.Dependencies.Add(e.Data);
 				}
 			}
 		}
@@ -576,14 +598,11 @@ namespace ProjectTask
 		/// </param>
 		private void mTasks_ItemAdded(object sender, ItemEventArgs<TaskItem> e)
 		{
-			TaskItem task = null;
-
-			if(e.Data != null && Parent?.ProjectFile != null)
+			if(e.Data != null)
 			{
-				task = Parent.ProjectFile.Tasks.FirstOrDefault(x => x == e.Data);
-				if(task == null)
+				if(!ActiveProjectContext.Tasks.Contains(e.Data))
 				{
-					Parent.ProjectFile.Tasks.Add(task);
+					ActiveProjectContext.Tasks.Add(e.Data);
 				}
 			}
 		}
@@ -648,14 +667,11 @@ namespace ProjectTask
 		private void mTeamContacts_ItemAdded(object sender,
 			ItemEventArgs<ContactItem> e)
 		{
-			ContactItem contact = null;
-
-			if(e.Data != null && Parent?.ProjectFile != null)
+			if(e.Data != null)
 			{
-				contact = Parent.ProjectFile.Contacts.FirstOrDefault(x => x == e.Data);
-				if(contact == null)
+				if(!ActiveProjectContext.Contacts.Contains(e.Data))
 				{
-					Parent.ProjectFile.Contacts.Add(contact);
+					ActiveProjectContext.Contacts.Add(e.Data);
 				}
 			}
 		}
@@ -719,14 +735,11 @@ namespace ProjectTask
 		/// </param>
 		private void mTimers_ItemAdded(object sender, ItemEventArgs<TimerItem> e)
 		{
-			TimerItem timer = null;
-
-			if(e.Data != null && Parent?.ProjectFile != null)
+			if(e.Data != null)
 			{
-				timer = Parent.ProjectFile.Timers.FirstOrDefault(x => x == e.Data);
-				if(timer == null)
+				if(!ActiveProjectContext.Timers.Contains(e.Data))
 				{
-					Parent.ProjectFile.Timers.Add(timer);
+					ActiveProjectContext.Timers.Add(e.Data);
 				}
 			}
 		}
@@ -768,6 +781,7 @@ namespace ProjectTask
 		/// </summary>
 		public TaskItem()
 		{
+			ItemId = NextItemId++;
 			mDependencies = new DependencyCollection();
 			mDependencies.CollectionChanged += mDependencies_CollectionChanged;
 			mDependencies.ItemAdded += mDependencies_ItemAdded;
@@ -787,6 +801,18 @@ namespace ProjectTask
 			mTimers.CollectionChanged += mTimers_CollectionChanged;
 			mTimers.ItemAdded += mTimers_ItemAdded;
 			mTimers.ItemPropertyChanged += mTimers_ItemPropertyChanged;
+			ActiveProjectContext.Tasks.Add(this);
+		}
+		//*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*
+		/// <summary>
+		/// Create a new instance of the TaskItem item.
+		/// </summary>
+		public TaskItem(string displayName) : this()
+		{
+			if(displayName?.Length > 0)
+			{
+				mDisplayName = displayName;
+			}
 		}
 		//*-----------------------------------------------------------------------*
 

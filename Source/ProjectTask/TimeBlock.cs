@@ -23,6 +23,8 @@ using System.Text;
 
 using Newtonsoft.Json;
 
+using static ProjectTask.ProjectTaskUtil;
+
 namespace ProjectTask
 {
 	//*-------------------------------------------------------------------------*
@@ -149,15 +151,11 @@ namespace ProjectTask
 		private void mEntries_ItemAdded(object sender,
 			ItemEventArgs<TimeNotationItem> e)
 		{
-			TimeNotationItem notation = null;
-
-			if(e.Data != null && Parent?.ProjectFile != null)
+			if(e.Data != null)
 			{
-				notation =
-					Parent.ProjectFile.TimeNotations.FirstOrDefault(x => x == e.Data);
-				if(notation == null)
+				if(!ActiveProjectContext.TimeNotations.Contains(e.Data))
 				{
-					Parent.ProjectFile.TimeNotations.Add(e.Data);
+					ActiveProjectContext.TimeNotations.Add(e.Data);
 				}
 			}
 		}
@@ -199,10 +197,12 @@ namespace ProjectTask
 		/// </summary>
 		public TimeBlockItem()
 		{
+			ItemId = NextItemId++;
 			mEntries = new TimeNotationCollection();
 			mEntries.CollectionChanged += mEntries_CollectionChanged;
 			mEntries.ItemAdded += mEntries_ItemAdded;
 			mEntries.ItemPropertyChanged += mEntries_ItemPropertyChanged;
+			ActiveProjectContext.TimeBlocks.Add(this);
 		}
 		//*-----------------------------------------------------------------------*
 
@@ -226,7 +226,6 @@ namespace ProjectTask
 			{
 				result = new TimeBlockItem()
 				{
-					ItemId = block.ItemId,
 					ItemTicket = block.ItemTicket,
 					mDisplayName = block.mDisplayName
 				};

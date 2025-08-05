@@ -199,6 +199,7 @@ namespace ProjectTask
 		public BaseItem()
 		{
 			Trace.WriteLine("BaseItem constructor...");
+			mItemId = mNextItemId++;
 			mComments = new CommentCollection();
 			mComments.CollectionChanged += mComments_CollectionChanged;
 			mComments.ItemPropertyChanged += mComments_ItemPropertyChanged;
@@ -300,20 +301,19 @@ namespace ProjectTask
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
-		//*	Parent																																*
+		//*	NextItemId																														*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
-		/// Private member for <see cref="Parent">Parent</see>.
+		/// Private member for <see cref="NextItemId">NextItemId</see>.
 		/// </summary>
-		private IParentCollection mParent = null;
+		private static int mNextItemId = 1;
 		/// <summary>
-		/// Get/Set a reference to the collection of which this item is a member.
+		/// Get/Set the next local item ID for this record.
 		/// </summary>
-		[JsonIgnore]
-		public IParentCollection Parent
+		public static int NextItemId
 		{
-			get { return mParent; }
-			set { mParent = value; }
+			get { return mNextItemId; }
+			set { mNextItemId = value; }
 		}
 		//*-----------------------------------------------------------------------*
 
@@ -345,7 +345,7 @@ namespace ProjectTask
 		/// </returns>
 		public bool ShouldSerializeItemId()
 		{
-			return true;
+			return false;
 		}
 		//*-----------------------------------------------------------------------*
 
