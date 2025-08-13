@@ -464,14 +464,14 @@ namespace ProjectTask
 			{
 				ClearEmptyComments(taskItem.Comments);
 				count = taskItem.Dependencies.Count;
-				for(index = 0; index < count; index ++)
+				for(index = 0; index < count; index++)
 				{
 					dependency = taskItem.Dependencies[index];
 					if(dependency == null || IsReferenceOnly(dependency))
 					{
 						taskItem.Dependencies.RemoveAt(index);
-						index--;	//	Deindex.
-						count--;	//	Discount.
+						index--;  //	Deindex.
+						count--;  //	Discount.
 					}
 				}
 				if(taskItem.OwnerContact != null &&
@@ -485,36 +485,36 @@ namespace ProjectTask
 					taskItem.ReviewerContact = null;
 				}
 				count = taskItem.Tasks.Count;
-				for(index = 0; index < count; index ++)
+				for(index = 0; index < count; index++)
 				{
 					task = taskItem.Tasks[index];
 					if(task == null || IsReferenceOnly(task))
 					{
 						taskItem.Tasks.RemoveAt(index);
-						index--;	//	Deindex.
-						count--;	//	Discount.
+						index--;  //	Deindex.
+						count--;  //	Discount.
 					}
 				}
 				count = taskItem.TeamContacts.Count;
-				for(index = 0; index < count; index ++)
+				for(index = 0; index < count; index++)
 				{
 					contact = taskItem.TeamContacts[index];
 					if(contact == null || IsReferenceOnly(contact))
 					{
 						taskItem.TeamContacts.RemoveAt(index);
-						index--;	//	Deindex.
-						count--;	//	Discount.
+						index--;  //	Deindex.
+						count--;  //	Discount.
 					}
 				}
 				count = taskItem.Timers.Count;
-				for(index = 0; index < count; index ++)
+				for(index = 0; index < count; index++)
 				{
 					timer = taskItem.Timers[index];
 					if(timer == null || IsReferenceOnly(timer))
 					{
 						taskItem.Timers.RemoveAt(index);
-						index--;	//	Deindex.
-						count--;	//	Discount.
+						index--;  //	Deindex.
+						count--;  //	Discount.
 					}
 				}
 			}
@@ -533,14 +533,14 @@ namespace ProjectTask
 			{
 				ClearEmptyComments(blockItem.Comments);
 				count = blockItem.Entries.Count;
-				for(index = 0; index < count; index ++)
+				for(index = 0; index < count; index++)
 				{
 					notation = blockItem.Entries[index];
 					if(notation == null || IsReferenceOnly(notation))
 					{
 						blockItem.Entries.RemoveAt(index);
-						index--;	//	Deindex.
-						count--;	//	Discount.
+						index--;  //	Deindex.
+						count--;  //	Discount.
 					}
 				}
 			}
