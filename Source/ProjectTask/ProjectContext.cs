@@ -84,7 +84,7 @@ namespace ProjectTask
 		/// <typeparam name="T">
 		/// Type of collection to enumerate.
 		/// </typeparam>
-		/// <param name="file">
+		/// <param name="fileCollection">
 		/// Reference to the full collection providing all of the lookup
 		/// information.
 		/// </param>
@@ -614,6 +614,41 @@ namespace ProjectTask
 		public ContactCollection Contacts
 		{
 			get { return mContacts; }
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//*	DefaultItemStatus																											*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Private member for
+		/// <see cref="DefaultItemStatus">DefaultItemStatus</see>.
+		/// </summary>
+		private TaskStatusItem mDefaultItemStatus = null;
+		/// <summary>
+		/// Get/Set a reference to the default item status for new tasks.
+		/// </summary>
+		public TaskStatusItem DefaultItemStatus
+		{
+			get { return mDefaultItemStatus; }
+			set { mDefaultItemStatus = value; }
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//*	DefaultItemType																												*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Private member for <see cref="DefaultItemType">DefaultItemType</see>.
+		/// </summary>
+		private TaskTypeItem mDefaultItemType = null;
+		/// <summary>
+		/// Get/Set a reference to the default item type for new tasks.
+		/// </summary>
+		public TaskTypeItem DefaultItemType
+		{
+			get { return mDefaultItemType; }
+			set { mDefaultItemType = value; }
 		}
 		//*-----------------------------------------------------------------------*
 

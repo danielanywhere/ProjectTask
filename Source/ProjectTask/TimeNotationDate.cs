@@ -45,6 +45,15 @@ namespace ProjectTask
 		/// <summary>
 		/// Add an item to the collection by member values.
 		/// </summary>
+		/// <param name="timeNotation">
+		/// Reference to the time notation to associate.
+		/// </param>
+		/// <param name="dateRange">
+		/// Reference to the date range being tracked.
+		/// </param>
+		/// <returns>
+		/// Reference to a time notation / date range association.
+		/// </returns>
 		public TimeNotationDateItem Add(TimeNotationItem timeNotation,
 			DateRangeItem dateRange)
 		{

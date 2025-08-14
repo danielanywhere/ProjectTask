@@ -31,6 +31,9 @@ namespace ProjectTask
 	/// <summary>
 	/// Serializes and deserializes a property reference using its Ticket.
 	/// </summary>
+	/// <typeparam name="T">
+	/// Type of object containing the ticket to be converted.
+	/// </typeparam>
 	public class TicketConverter<T> : JsonConverter where T : new()
 	{
 		//*************************************************************************

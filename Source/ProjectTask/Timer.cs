@@ -49,6 +49,12 @@ namespace ProjectTask
 		/// <summary>
 		/// Return the sum of hours elapsed in the caller's collection of timers.
 		/// </summary>
+		/// <param name="timers">
+		/// Reference to the list of timers whose time will be summed.
+		/// </param>
+		/// <returns>
+		/// The sum of the provided timers, in decimal hours.
+		/// </returns>
 		public static float Sum(List<TimerItem> timers)
 		{
 			float result = 0f;

@@ -87,7 +87,7 @@ namespace ProjectTask
 		/// End Date.
 		/// </param>
 		/// <returns>
-		/// Newly created and added DateRangeItem.
+		/// Reference to the newly created and added DateRangeItem.
 		/// </returns>
 		public DateRangeItem Add(DateTime startDate, DateTime endDate)
 		{
@@ -106,6 +106,9 @@ namespace ProjectTask
 		/// <param name="duration">
 		/// Duration of the event.
 		/// </param>
+		/// <returns>
+		/// Reference to the newly created and added DateRangeItem.
+		/// </returns>
 		public DateRangeItem Add(DateTime startDate, TimeSpan duration)
 		{
 			DateRangeItem result = new DateRangeItem(startDate, duration);

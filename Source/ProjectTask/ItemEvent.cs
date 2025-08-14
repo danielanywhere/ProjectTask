@@ -28,6 +28,9 @@ namespace ProjectTask
 	/// <summary>
 	/// Specialized item event args in the data type of the item.
 	/// </summary>
+	/// <typeparam name="T">
+	/// Type of item to represent in the event handler.
+	/// </typeparam>
 	public class ItemEventArgs<T> : EventArgs
 	{
 		//*************************************************************************

@@ -1194,6 +1194,9 @@ namespace ProjectTask
 		/// <param name="allocations">
 		/// Reference to a collection of schedule allocations made per contact.
 		/// </param>
+		/// <param name="totalTime">
+		/// Total amount of time required.
+		/// </param>
 		private void InitializeSchedule(List<ContactAllocationItem> allocations,
 			float totalTime)
 		{

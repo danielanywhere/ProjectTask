@@ -2,7 +2,37 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+<PackageLicenseExpression>AGPL-3.0-only</PackageLicenseExpression>
+<UserSecretsId>d331bb2c-271a-49f3-8e42-a068e2751051</UserSecretsId>
+<RootNamespace>ProjectTask</RootNamespace>
+<Platforms>AnyCPU;x64</Platforms>
+<PackageId>Dans.ProjectTask.Library</PackageId>
+<Title>Dan's Project and Task Library</Title>
+<Version>25.2814.3647</Version>
+<Description>Dan's Project and Task Library.</Description>
+<Copyright>Copyright(c) 2025. Daniel Patterson, MCSD (danielanywhere)</Copyright>
+<PackageProjectUrl>https://github.com/danielanywhere/ProjectTask</PackageProjectUrl>
+<PackageReadmeFile>README.md</PackageReadmeFile>
+<PackageTags>project;task;planning;scheduling;management;extreme;programming;agile;scrum;waterfall</PackageTags>
+<Authors>Daniel Patterson, MCSD (danielanywhere)</Authors>
+<GenerateDocumentationFile>True</GenerateDocumentationFile>
+<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+<SignAssembly>False</SignAssembly>
   </PropertyGroup>
+
+<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+</PropertyGroup>
+<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+	<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+</PropertyGroup>
+
+<ItemGroup>
+	<None Include="..\NuGet\README.md">
+		<Pack>True</Pack>
+		<PackagePath>\</PackagePath>
+	</None>
+</ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

@@ -571,8 +571,8 @@ namespace ProjectTask
 		/// Return an array of Week Names corresponding to the
 		/// specified Schedule Week Ordinal flags.
 		/// </summary>
-		/// <param name="ordinals">
-		/// Schedule Week Ordinal Flags, indicating multiple Ordinal ranges.
+		/// <param name="weeks">
+		/// Schedule Week ordinal flags, indicating multiple ordinal ranges.
 		/// </param>
 		/// <param name="abbreviated">
 		/// Value indicating whether or not to return abbreviated values.

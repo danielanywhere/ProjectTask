@@ -782,6 +782,8 @@ namespace ProjectTask
 		public TaskItem()
 		{
 			ItemId = NextItemId++;
+			mItemType = ActiveProjectContext.DefaultItemType;
+			mItemStatus = ActiveProjectContext.DefaultItemStatus;
 			mDependencies = new DependencyCollection();
 			mDependencies.CollectionChanged += mDependencies_CollectionChanged;
 			mDependencies.ItemAdded += mDependencies_ItemAdded;
@@ -807,11 +809,35 @@ namespace ProjectTask
 		/// <summary>
 		/// Create a new instance of the TaskItem item.
 		/// </summary>
+		/// <param name="displayName">
+		/// The human-readable display name of the item.
+		/// </param>
 		public TaskItem(string displayName) : this()
 		{
 			if(displayName?.Length > 0)
 			{
 				mDisplayName = displayName;
+			}
+		}
+		//*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*
+		/// <summary>
+		/// Create a new instance of the TaskItem item.
+		/// </summary>
+		/// <param name="displayName">
+		/// The human-readable display name of the item.
+		/// </param>
+		/// <param name="itemType">
+		/// Name of the type of item to initialize.
+		/// </param>
+		public TaskItem(string displayName, string itemType) : this()
+		{
+			if(displayName?.Length > 0)
+			{
+				mDisplayName = displayName;
+				if(itemType?.Length > 0)
+				{
+					mItemType = ActiveProjectContext.TaskTypes[itemType];
+				}
 			}
 		}
 		//*-----------------------------------------------------------------------*

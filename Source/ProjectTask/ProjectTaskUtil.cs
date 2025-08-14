@@ -494,6 +494,9 @@ namespace ProjectTask
 		/// <param name="decimalPlaces">
 		/// Number of decimal places precision to allow on the provided number.
 		/// </param>
+		/// <returns>
+		/// The provided number, limited to the specified precision.
+		/// </returns>
 		public static double SetPrecision(double number, int decimalPlaces)
 		{
 			string format = "0";
@@ -519,6 +522,9 @@ namespace ProjectTask
 		/// <param name="decimalPlaces">
 		/// Number of decimal places precision to allow on the provided number.
 		/// </param>
+		/// <returns>
+		/// The provided number, limited to the specified precision.
+		/// </returns>
 		public static float SetPrecision(float number, int decimalPlaces)
 		{
 			string format = "0";

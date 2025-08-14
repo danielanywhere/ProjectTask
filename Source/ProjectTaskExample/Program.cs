@@ -112,6 +112,12 @@ namespace ProjectTaskExample
 				("Project", ProjectTaskTypeEnum.Project),
 				("Task", ProjectTaskTypeEnum.Task));
 
+			//	Set the default type and status.
+			ActiveProjectContext.DefaultItemType =
+				ActiveProjectContext.TaskTypes["Task"];
+			ActiveProjectContext.DefaultItemStatus =
+				ActiveProjectContext.TaskStates["TODO"];
+
 			//	Configure the users.
 			projectContext.Contacts.Add(
 				("Pickle Featherstone", "pickle.featherstone@quirkymail.com"),
@@ -259,7 +265,7 @@ namespace ProjectTaskExample
 
 			Console.WriteLine("Clearing Project Context...");
 			ActiveProjectContext.Clear();
-			project = new TaskItem("Main Project");
+			project = new TaskItem("Main Project", "Project");
 			task = project.Tasks.Add("Design Module");
 
 			task.Dependencies.Add(

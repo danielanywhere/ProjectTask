@@ -32,6 +32,9 @@ namespace ProjectTask
 	/// Serializes and deserializes a property representing a collection of
 	/// items that inherit from the BaseItem object.
 	/// </summary>
+	/// <typeparam name="T">
+	/// Type of object containing the ticket collection to be converted.
+	/// </typeparam>
 	public class TicketCollectionConverter<T> : JsonConverter where T : new()
 	{
 		//*************************************************************************

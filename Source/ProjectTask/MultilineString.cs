@@ -52,6 +52,12 @@ namespace ProjectTask
 		/// <summary>
 		/// Cast the string instance to a MultilineString.
 		/// </summary>
+		/// <param name="value">
+		/// The string value to convert.
+		/// </param>
+		/// <returns>
+		/// Reference to the new MultilineString representing the caller's value.
+		/// </returns>
 		public static implicit operator MultilineString(string value)
 		{
 			MultilineString result = new MultilineString();

@@ -866,6 +866,9 @@ namespace ProjectTask
 		/// <summary>
 		/// Return the string representation of this item.
 		/// </summary>
+		/// <returns>
+		/// The string representation of this contact.
+		/// </returns>
 		public override string ToString()
 		{
 			string result = "";
