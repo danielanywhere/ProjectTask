@@ -1,7 +1,8 @@
 using ProjectTask;
 
 // Configure the base data.
-// This only needs to be done once per session.
+// This only needs to be done once per session,
+// or can be read from the database or data file.
 // Task states.
 ActiveProjectContext.TaskStates.Add(
  ("TODO", ProjectTaskStateEnum.Queued),
